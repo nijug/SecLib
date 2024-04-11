@@ -22,6 +22,7 @@ public abstract class BaseUser {
     private String password;
 
     @Getter
+    @Setter // for testing purposes
     @Column(name = "failed_attempts")
     private int failedAttempts = 0;
 
