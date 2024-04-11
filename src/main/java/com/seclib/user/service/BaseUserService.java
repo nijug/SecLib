@@ -1,5 +1,6 @@
 package com.seclib.user.service;
 
+import com.seclib.twoFA.service.BaseTotpService;
 import com.seclib.user.model.BaseUser;
 import com.seclib.config.UserProperties;
 import com.seclib.user.repository.BaseUserRepository;
@@ -16,23 +17,25 @@ import java.util.Set;
 import jakarta.servlet.http.HttpServletRequest;
 
 
-public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepository<T, Long>, S extends BaseLoginAttempt, U extends BaseLoginAttemptRepository<S, Long>, V extends BaseLoginAttemptService<S, U>> {
+public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepository<T, Long>, S extends BaseLoginAttempt, U extends BaseLoginAttemptRepository<S, Long>, V extends BaseLoginAttemptService<S, U>, W extends BaseTotpService> {
 
     private final UserProperties userProperties;
     private final Argon2PasswordEncoder passwordEncoder;
     private final V loginAttemptService;
+    private final W totpService;
 
     @Setter
     private Validator validator;
 
     protected R userRepository;
 
-    public BaseUserService(UserProperties userProperties, R userRepository, Validator validator, V loginAttemptService) {
+    public BaseUserService(UserProperties userProperties, R userRepository, Validator validator, V loginAttemptService, W totpService) {
         this.userProperties = userProperties;
         this.userRepository = userRepository;
         this.passwordEncoder = new Argon2PasswordEncoder(16, 32, 1, 7168, 5);
         this.validator = validator;
         this.loginAttemptService = loginAttemptService;
+        this.totpService = totpService;
     }
 
     public T createUser(Long id, String password) {
@@ -62,11 +65,10 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         System.out.println("User password: " + user.getPassword());
-        //String secretKey = totpService.generateSecretKey();
-       // user.setTotpSecret(secretKey);
 
-        //List<String> recoveryKeys = generateRecoveryKeys();
-        //storeRecoveryKeys(user, recoveryKeys);
+        if (userProperties.isTwoFactorAuthEnabled()) {
+            String totp = enableTwoFactorAuth(user);
+        }
         userRepository.save(user);
     }
 
@@ -100,8 +102,8 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
                 loginAttempt = loginAttemptService.createInstance(ipAddress);
             }
 
-            if (loginAttempt.getFailedAttempts() >= userProperties.getMaxAttempts() &&
-                    System.currentTimeMillis() - loginAttempt.getLockTime() < userProperties.getLockTime()) {
+            if (loginAttempt.getFailedAttempts() >= userProperties.getIpMaxAttempts() &&
+                    System.currentTimeMillis() - loginAttempt.getLockTime() < userProperties.getIpLockTime()) {
                 throw new IllegalArgumentException("Logging from this ip has been locked, try again later");
             }
         }
@@ -110,6 +112,9 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
             if (loginAttempt != null) {
                 incrementFailedAttempts(loginAttempt);
             }
+            if (userProperties.isUserLockingEnabled()) {
+                incrementFailedAttempts(userInDB);
+            }
             throw new IllegalArgumentException("Invalid username/password");
         }
 
@@ -117,27 +122,49 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
             loginAttemptService.resetFailedAttempts(loginAttempt);
         }
 
+        if (userProperties.isUserLockingEnabled() && userInDB.getFailedAttempts() >= userProperties.getUserMaxAttempts() &&
+                System.currentTimeMillis() - userInDB.getLockTime() < userProperties.getUserLockTime()) {
+            throw new IllegalArgumentException("This user has been locked, try again later");
+        }
+        userInDB.resetFailedAttempts();
+        userInDB.setLockTime(0);
+        userRepository.save(userInDB);
+
         return userInDB;
     }
     //todo:consider exceptions handling
 
     private void incrementFailedAttempts(S loginAttempt) {
         loginAttempt.setFailedAttempts(loginAttempt.getFailedAttempts() + 1);
-        if (loginAttempt.getFailedAttempts() >= userProperties.getMaxAttempts()) {
+        if (loginAttempt.getFailedAttempts() >= userProperties.getIpMaxAttempts()) {
             loginAttempt.setLockTime(System.currentTimeMillis());
         }
         loginAttemptService.saveLoginAttempt(loginAttempt);
     }
 
+    private void incrementFailedAttempts(T user) {
+        user.incrementFailedAttempts();
+        if (user.getFailedAttempts() >= userProperties.getUserMaxAttempts()) {
+            user.setLockTime(System.currentTimeMillis());
+        }
+        userRepository.save(user);
+    }
+
+    public String enableTwoFactorAuth(T user) {
+        String secretKey = totpService.generateSecretKey();
+        user.setTotpSecret(secretKey);
+        userRepository.save(user);
+
+        return totpService.generateTotp(secretKey);
+    }
+
+    public boolean verifyTwoFactorAuth(T user, String totp, HttpSession session) {
+        return totpService.validateTotp(user.getTotpSecret(), totp, session);
+    }
+
     protected abstract T createInstance(Long id, String password);
 
-    public String getTwoFactorAuthCode(T user) { // temporary implementation for testing
-        if (userProperties.isTwoFactorAuthEnabled()) {
-            return "123456";
-        } else {
-        return null;
-        }
-    }
+
 
 
 }

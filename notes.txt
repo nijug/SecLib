@@ -9,3 +9,8 @@ Providing the following library functionality related to data security:
 - role-based access control
 - honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint.
 Creating a simple web application to present the library's capabilities
+
+
+Secure Transmission: Use HTTPS for all traffic, not just for login pages. This ensures that user credentials are always sent over an encrypted connection.
+Session Management: Implement secure session management. This includes setting session timeouts, regenerating session IDs after login, and securely handling cookies.
+Audit Logging: Keep a record of all successful and failed login attempts. This can help detect and investigate suspicious activities.

@@ -27,7 +27,5 @@ public abstract class BaseLoginAttemptService<T extends BaseLoginAttempt, R exte
 
     public abstract T createInstance(String ipAddress);
 
-    public abstract T createTestInstance(String ipAddress, int failedAttempts, long lockTime);
-
 
 }

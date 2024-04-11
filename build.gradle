@@ -34,10 +34,12 @@ dependencies {
 	implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
 	implementation 'jakarta.el:jakarta.el-api:6.0.0-RC1'
 	implementation 'org.springframework.security:spring-security-crypto:6.2.2'
-	implementation 'org.glassfish:jakarta.el:4.0.0'
+	implementation 'org.glassfish:jakarta.el:4.0.2'
 	implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
 	implementation 'jakarta.servlet:jakarta.servlet-api:6.1.0-M2'
 	implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+	implementation 'org.jboss.aerogear:aerogear-otp-java:1.0.0'
+
 }
 
 tasks.named('test') {

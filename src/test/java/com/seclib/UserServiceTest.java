@@ -111,8 +111,8 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledAndCorrectPasswordButBlockedIp() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-        when(userProperties.getLockTime()).thenReturn(6000L); // Set lockTime to 5 seconds
-        when(userProperties.getMaxAttempts()).thenReturn(3);
+        when(userProperties.getIpLockTime()).thenReturn(6000L); // Set lockTime to 5 seconds
+        when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000 ));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
         assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
@@ -129,7 +129,7 @@ public class UserServiceTest {
     @Test
     public void testLoginWithIpLockingEnabledAndExceedingMaxAttempts() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
-        when(userProperties.getMaxAttempts()).thenReturn(2);
+        when(userProperties.getIpMaxAttempts()).thenReturn(2);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
 
@@ -162,8 +162,8 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledCorrectPasswordExceedingMaxAttempts() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-        when(userProperties.getLockTime()).thenReturn(5000L);
-        when(userProperties.getMaxAttempts()).thenReturn(3);
+        when(userProperties.getIpLockTime()).thenReturn(5000L);
+        when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
         assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
@@ -173,7 +173,7 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledIncorrectPasswordExceedingMaxAttempts() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-        when(userProperties.getMaxAttempts()).thenReturn(3);
+        when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
         assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
@@ -183,8 +183,8 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledCorrectPasswordJustBlocked() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-        when(userProperties.getLockTime()).thenReturn(5000L); // Set lockTime to 5 seconds
-        when(userProperties.getMaxAttempts()).thenReturn(3);
+        when(userProperties.getIpLockTime()).thenReturn(5000L); // Set lockTime to 5 seconds
+        when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
         assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
@@ -194,8 +194,107 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledIncorrectPasswordJustBlocked() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
-        when(userProperties.getMaxAttempts()).thenReturn(3);
+        when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledAndCorrectPassword() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
+        DefaultUser loggedInUser = userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request);
+        assertEquals(testUser.getId(), loggedInUser.getId());
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledAndIncorrectPassword() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledAndCorrectPasswordButBlockedUser() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        when(userProperties.getUserLockTime()).thenReturn(6000L); // Set lockTime to 5 seconds
+        when(userProperties.getUserMaxAttempts()).thenReturn(3);
+        testUser.setFailedAttempts(3);
+        testUser.setLockTime(System.currentTimeMillis() - 3000);
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledAndIncorrectPasswordAndBlockedUser() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        testUser.setFailedAttempts(3);
+        testUser.setLockTime(System.currentTimeMillis() - 3000);
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledAndExceedingMaxAttempts() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(userProperties.getUserMaxAttempts()).thenReturn(2);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
+
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledCorrectPasswordExceedingMaxAttempts() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        when(userProperties.getUserLockTime()).thenReturn(5000L);
+        when(userProperties.getUserMaxAttempts()).thenReturn(3);
+        testUser.setFailedAttempts(5);
+        testUser.setLockTime(System.currentTimeMillis() - 3000);
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledIncorrectPasswordExceedingMaxAttempts() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        when(userProperties.getUserMaxAttempts()).thenReturn(3);
+        testUser.setFailedAttempts(5);
+        testUser.setLockTime(System.currentTimeMillis() - 3000);
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledCorrectPasswordJustBlocked() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        when(userProperties.getUserLockTime()).thenReturn(5000L); // Set lockTime to 5 seconds
+        when(userProperties.getUserMaxAttempts()).thenReturn(3);
+        testUser.setFailedAttempts(3);
+        testUser.setLockTime(System.currentTimeMillis());
+        DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
+        assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+    }
+
+    @Test
+    public void testLoginWithUserLockingEnabledIncorrectPasswordJustBlocked() throws InterruptedException {
+        when(userProperties.isUserLockingEnabled()).thenReturn(true);
+        when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        when(userProperties.getUserMaxAttempts()).thenReturn(3);
+        testUser.setFailedAttempts(3);
+        testUser.setLockTime(System.currentTimeMillis());
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
         assertThrows(IllegalArgumentException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
     }

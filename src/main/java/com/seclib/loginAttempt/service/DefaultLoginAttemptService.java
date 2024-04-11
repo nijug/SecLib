@@ -15,8 +15,4 @@ public class DefaultLoginAttemptService extends BaseLoginAttemptService<DefaultL
           return new DefaultLoginAttempt(ipAddress);
     }
 
-    @Override
-    public DefaultLoginAttempt createTestInstance(String ipAddress, int failedAttempts, long lockTime) {
-        return new DefaultLoginAttempt(ipAddress, failedAttempts, lockTime);
-    }
 }
