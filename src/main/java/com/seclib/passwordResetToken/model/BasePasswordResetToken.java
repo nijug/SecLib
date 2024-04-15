@@ -1,5 +1,5 @@
 // BasePasswordResetToken.java
-package com.seclib.passwordReset.model;
+package com.seclib.passwordResetToken.model;
 
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -24,9 +24,11 @@ public abstract class BasePasswordResetToken<T extends BaseUser> {
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(nullable = false, name = "user_id")
+    @Setter
     private T user;
 
     @Getter
+    @Setter
     private Date expiryDate;
 
 
