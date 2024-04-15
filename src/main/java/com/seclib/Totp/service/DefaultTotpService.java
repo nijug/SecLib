@@ -1,4 +1,4 @@
-package com.seclib.twoFA.service;
+package com.seclib.Totp.service;
 
 import org.springframework.stereotype.Service;
 

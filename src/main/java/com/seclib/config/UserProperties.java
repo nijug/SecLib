@@ -16,7 +16,7 @@ public class UserProperties {
     private boolean ipLockingEnabled = true;
     private boolean userLockingEnabled = true;
     private int ipMaxAttempts = 2;
-    private long ipLockTime = 1 * 60 * 1000;
+    private long ipLockTime = 1 * 60 * 1000; //1 minute
     private int userMaxAttempts = 2;
     private long userLockTime = 1 * 60 * 1000;
 

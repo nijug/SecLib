@@ -4,7 +4,7 @@ import com.seclib.config.UserProperties;
 import com.seclib.loginAttempt.model.DefaultLoginAttempt;
 import com.seclib.loginAttempt.repository.DefaultLoginAttemptRepository;
 import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
-import com.seclib.twoFA.service.DefaultTotpService;
+import com.seclib.Totp.service.DefaultTotpService;
 import com.seclib.user.model.DefaultUser;
 import com.seclib.user.repository.DefaultUserRepository;
 import jakarta.validation.Validator;

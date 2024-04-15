@@ -1,6 +1,10 @@
 package com.seclib.user.service;
 
-import com.seclib.twoFA.service.BaseTotpService;
+import com.seclib.exception.ApiException;
+import com.seclib.exception.LoginAttemptException;
+import com.seclib.exception.PasswordValidationException;
+import com.seclib.exception.UserException;
+import com.seclib.Totp.service.BaseTotpService;
 import com.seclib.user.model.BaseUser;
 import com.seclib.config.UserProperties;
 import com.seclib.user.repository.BaseUserRepository;
@@ -44,7 +48,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         return user;
     }
 
-    public void register(T user) throws InterruptedException {
+    public void register(T user) throws ApiException, InterruptedException {
         Thread.sleep(500);
         Set<ConstraintViolation<T>> violations = validator.validate(user);
         if (!violations.isEmpty()) {
@@ -53,29 +57,25 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
 
         T existingUser = userRepository.findById(user.getId()).orElse(null);
         if (existingUser != null) {
-            throw new IllegalArgumentException("User with this ID already exists");
+            throw new UserException(400, "User with this ID already exists");
         }
 
-        try {
-            validatePassword(user.getPassword());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
+        validatePassword(user.getPassword());
 
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         System.out.println("User password: " + user.getPassword());
 
         if (userProperties.isTwoFactorAuthEnabled()) {
-            String totp = enableTwoFactorAuth(user);
+            setTwoFactorAuthKey(user);
         }
         userRepository.save(user);
     }
 
-    public void validatePassword(String password) {
+    public void validatePassword(String password) throws ApiException {
         String pattern = userProperties.getPasswordPolicy().getPattern();
         if (!password.matches(pattern)) {
-            throw new IllegalArgumentException("Invalid password");
+            throw new PasswordValidationException(400, "Password does not match the pattern");
         }
 
         int N = 95;
@@ -84,27 +84,30 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
 
         System.out.println("Entropy: " + entropy);
         if (entropy < userProperties.getPasswordPolicy().getEntropy()) {
-            throw new IllegalArgumentException("Weak password");
+            throw new PasswordValidationException(400, "Weak password");
         }
     }
 
-    public T login(T userFromRequest, String totpOrRecoveryKey, HttpSession session, HttpServletRequest request) throws InterruptedException {
+    public T login(T userFromRequest, String totpOrRecoveryKey, HttpSession session, HttpServletRequest request) throws ApiException {
         T userInDB = userRepository.findById(userFromRequest.getId()).orElse(null);
         if (userInDB == null) {
-            throw new IllegalArgumentException("Invalid username/password");
+            throw new UserException(401, "User not found");
         }
 
         S loginAttempt = null;
         if (userProperties.isIpLockingEnabled()) {
-            String ipAddress = request.getRemoteAddr(); // Get IP address of the client
+            String ipAddress = request.getRemoteAddr();
             loginAttempt = loginAttemptService.getLoginAttempt(ipAddress);
             if (loginAttempt == null) {
                 loginAttempt = loginAttemptService.createInstance(ipAddress);
             }
 
+            System.out.println("Failed attempts: " + loginAttempt.getFailedAttempts() + " Locked till: " + (loginAttempt.getLockTime()+userProperties.getIpLockTime())  + " Current time: " + System.currentTimeMillis() + " Difference: " + (System.currentTimeMillis() - loginAttempt.getLockTime()+userProperties.getIpLockTime() ));
+            System.out.println((loginAttempt.getFailedAttempts() >= userProperties.getIpMaxAttempts()) + " " + (
+                    System.currentTimeMillis() < userProperties.getIpLockTime() + loginAttempt.getLockTime()));
             if (loginAttempt.getFailedAttempts() >= userProperties.getIpMaxAttempts() &&
-                    System.currentTimeMillis() - loginAttempt.getLockTime() < userProperties.getIpLockTime()) {
-                throw new IllegalArgumentException("Logging from this ip has been locked, try again later");
+                    System.currentTimeMillis() < userProperties.getIpLockTime() + loginAttempt.getLockTime()) {
+                throw new LoginAttemptException(403, "Logging from this ip has been locked, try again later");
             }
         }
 
@@ -115,7 +118,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
             if (userProperties.isUserLockingEnabled()) {
                 incrementFailedAttempts(userInDB);
             }
-            throw new IllegalArgumentException("Invalid username/password");
+            throw new UserException(401, "Invalid password");
         }
 
         if (loginAttempt != null) {
@@ -124,7 +127,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
 
         if (userProperties.isUserLockingEnabled() && userInDB.getFailedAttempts() >= userProperties.getUserMaxAttempts() &&
                 System.currentTimeMillis() - userInDB.getLockTime() < userProperties.getUserLockTime()) {
-            throw new IllegalArgumentException("This user has been locked, try again later");
+            throw new UserException(403, "This user has been locked, try again later");
         }
         userInDB.resetFailedAttempts();
         userInDB.setLockTime(0);
@@ -132,7 +135,6 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
 
         return userInDB;
     }
-    //todo:consider exceptions handling
 
     private void incrementFailedAttempts(S loginAttempt) {
         loginAttempt.setFailedAttempts(loginAttempt.getFailedAttempts() + 1);
@@ -150,12 +152,11 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         userRepository.save(user);
     }
 
-    public String enableTwoFactorAuth(T user) {
+    public void setTwoFactorAuthKey(T user) {
         String secretKey = totpService.generateSecretKey();
         user.setTotpSecret(secretKey);
         userRepository.save(user);
 
-        return totpService.generateTotp(secretKey);
     }
 
     public boolean verifyTwoFactorAuth(T user, String totp, HttpSession session) {

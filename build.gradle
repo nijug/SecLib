@@ -41,6 +41,8 @@ dependencies {
 	implementation 'org.jboss.aerogear:aerogear-otp-java:1.0.0'
 	implementation 'org.springframework:spring-web'
 	implementation 'org.springframework:spring-webmvc'
+	implementation 'com.google.zxing:core:3.5.3'
+	implementation 'com.google.zxing:javase:3.5.2'
 
 }
 
