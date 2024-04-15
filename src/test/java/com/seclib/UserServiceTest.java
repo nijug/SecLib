@@ -76,7 +76,7 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        DefaultUser loggedInUser = userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request);
+        DefaultUser loggedInUser = userService.login(userForLogin, new MockHttpSession(), request);
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -85,7 +85,7 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findById(2L)).thenReturn(Optional.empty());
         DefaultUser userForLogin = new DefaultUser(2L, "Password123!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -93,7 +93,7 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findById(anyLong())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        DefaultUser loggedInUser = userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request);
+        DefaultUser loggedInUser = userService.login(userForLogin, new MockHttpSession(), request);
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -110,7 +110,7 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class UserServiceTest {
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000 ));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
     @Test
     public void testLoginWithIpLockingEnabledAndIncorrectPasswordAndBlockedIp(){
@@ -130,7 +130,7 @@ public class UserServiceTest {
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -145,9 +145,9 @@ public class UserServiceTest {
 
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(firstAttempt, secondAttempt, thirdAttempt);
 
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
-        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -155,7 +155,7 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(2L)).thenReturn(Optional.empty());
         DefaultUser userForLogin = new DefaultUser(2L, "Password123!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -164,7 +164,7 @@ public class UserServiceTest {
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000 ));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        DefaultUser loggedInUser = userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request);
+        DefaultUser loggedInUser = userService.login(userForLogin, new MockHttpSession(), request);
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -176,7 +176,7 @@ public class UserServiceTest {
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -186,7 +186,7 @@ public class UserServiceTest {
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -197,7 +197,7 @@ public class UserServiceTest {
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -207,7 +207,7 @@ public class UserServiceTest {
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -215,7 +215,7 @@ public class UserServiceTest {
         when(userProperties.isUserLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        DefaultUser loggedInUser = userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request);
+        DefaultUser loggedInUser = userService.login(userForLogin, new MockHttpSession(), request);
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -224,7 +224,7 @@ public class UserServiceTest {
         when(userProperties.isUserLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -236,7 +236,7 @@ public class UserServiceTest {
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -246,7 +246,7 @@ public class UserServiceTest {
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -256,11 +256,11 @@ public class UserServiceTest {
         when(defaultUserRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
 
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
 
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
 
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -272,7 +272,7 @@ public class UserServiceTest {
         testUser.setFailedAttempts(5);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -283,7 +283,7 @@ public class UserServiceTest {
         testUser.setFailedAttempts(5);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -295,7 +295,7 @@ public class UserServiceTest {
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis());
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "Password123!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 
     @Test
@@ -306,6 +306,6 @@ public class UserServiceTest {
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis());
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
-        assertThrows(UserException.class, () -> userService.login(userForLogin, "totpOrRecoveryKey", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
 }

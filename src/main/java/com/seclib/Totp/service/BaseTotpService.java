@@ -24,7 +24,6 @@ public abstract class BaseTotpService {
         return Base32.random();
     }
 
-
     public boolean validateTotp(String secretKey, String totp, HttpSession session) {
         String lastUsedTotp = (String) session.getAttribute("lastUsedTotp");
         Long lastUsedTotpTime = (Long) session.getAttribute("lastUsedTotpTime");

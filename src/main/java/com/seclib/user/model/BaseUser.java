@@ -21,27 +21,10 @@ public abstract class BaseUser {
     @Setter
     private String password;
 
-    @Getter
-    @Setter // for testing purposes
-    @Column(name = "failed_attempts")
-    private int failedAttempts = 0;
-
-    @Getter
-    @Setter
-    @Column(name = "lock_time")
-    private long lockTime = 0;
-
-    @Getter
-    @Setter
-    private String totpSecret;
-
-
     protected BaseUser(Long id, String password) {
         this.id = id;
         this.password = password;
     }
-
-
 
     @Override
     public boolean equals(Object o) {
@@ -56,6 +39,7 @@ public abstract class BaseUser {
         System.out.println("id: " + id);
         return id;
     }
+
     @Override
     public int hashCode() {
         return Objects.hash(id, password);
@@ -64,11 +48,5 @@ public abstract class BaseUser {
     protected BaseUser() {
     }
 
-    public void resetFailedAttempts() {
-        this.failedAttempts = 0;
-    }
 
-    public void incrementFailedAttempts() {
-        this.failedAttempts++;
-    }
 }
