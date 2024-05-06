@@ -1,8 +1,8 @@
 Providing the following library functionality related to data security:
-- user registration and login
-- authentication and authorization
-- two-factor authentication
-- password recovery
+- user registration and login D
+- authentication and authorization D
+- two-factor authentication D
+- password recovery D
 - work monitoring (to detect potential attacks/identity theft)
 - social login
 - session consistency control

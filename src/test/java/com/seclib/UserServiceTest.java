@@ -6,6 +6,8 @@ import com.seclib.exception.LoginAttemptException;
 import com.seclib.exception.UserException;
 import com.seclib.loginAttempt.model.DefaultLoginAttempt;
 import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
+import com.seclib.passwordResetToken.model.DefaultPasswordResetToken;
+import com.seclib.passwordResetToken.service.DefaultPasswordResetTokenService;
 import com.seclib.user.model.DefaultUser;
 import com.seclib.user.repository.DefaultUserRepository;
 import com.seclib.user.service.DefaultUserService;
@@ -14,9 +16,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
@@ -43,9 +49,16 @@ public class UserServiceTest {
     private PasswordPolicy passwordPolicy;
 
     @Mock
+    private DefaultPasswordResetTokenService passwordResetTokenService;
+
+    @Mock
     private DefaultLoginAttemptService loginAttemptService;
 
     private MockHttpServletRequest request;
+
+    @Mock
+    private Argon2PasswordEncoder passwordEncoder;
+
 
     @BeforeEach
     public void setUp() {
@@ -307,5 +320,23 @@ public class UserServiceTest {
         testUser.setLockTime(System.currentTimeMillis());
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
         assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
+    }
+    @Test
+    public void testResetPassword() throws InterruptedException {
+        String token = "testToken";
+        String newPassword = "newPassword123!";
+        DefaultPasswordResetToken resetToken = new DefaultPasswordResetToken();
+        DefaultUser user = new DefaultUser(testUser.getId(), "Password123!");
+        resetToken.setUser(user);
+
+        Mockito.when(passwordResetTokenService.getPasswordResetToken(token)).thenReturn(resetToken);
+        Mockito.when(passwordEncoder.encode(newPassword)).thenReturn("encodedPassword");
+
+        userService.resetPassword(token, newPassword);
+
+        verify(passwordResetTokenService, times(1)).getPasswordResetToken(token);
+        verify(passwordEncoder, times(1)).encode(newPassword);
+        verify(defaultUserRepository, times(1)).save(any(DefaultUser.class));
+        verify(passwordResetTokenService, times(1)).deletePasswordResetToken(resetToken);
     }
 }

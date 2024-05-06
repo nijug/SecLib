@@ -86,6 +86,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         if (entropy < userProperties.getPasswordPolicy().getEntropy()) {
             throw new PasswordValidationException(400, "Weak password");
         }
+        System.out.println("Password is valid");
     }
 
     protected abstract T createInstance(Long id, String password);

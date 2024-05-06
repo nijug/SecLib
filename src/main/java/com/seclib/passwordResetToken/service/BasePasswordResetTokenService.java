@@ -1,7 +1,7 @@
 package com.seclib.passwordResetToken.service;
 
 import com.seclib.passwordResetToken.model.BasePasswordResetToken;
-import com.seclib.passwordResetToken.repository.BasePasswordResetTokenRepository;
+import com.seclib.passwordResetToken.repository.*;
 import com.seclib.user.model.BaseUser;
 import org.springframework.stereotype.Service;
 

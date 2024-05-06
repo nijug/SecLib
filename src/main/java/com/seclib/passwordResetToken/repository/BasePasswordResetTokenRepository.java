@@ -9,6 +9,8 @@ import java.io.Serializable;
 
 @NoRepositoryBean
 public interface BasePasswordResetTokenRepository<T extends BasePasswordResetToken<U>, U extends BaseUser, ID extends Serializable> extends JpaRepository<T, ID> {
+
     T findByUser(U user);
     T findByToken(String token);
+
 }

@@ -7,6 +7,8 @@ import com.seclib.exception.UserException;
 import com.seclib.loginAttempt.model.DefaultLoginAttempt;
 import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
 import com.seclib.Totp.service.DefaultTotpService;
+import com.seclib.passwordResetToken.model.DefaultPasswordResetToken;
+import com.seclib.passwordResetToken.service.DefaultPasswordResetTokenService;
 import com.seclib.user.model.DefaultUser;
 import com.seclib.user.repository.DefaultUserRepository;
 import jakarta.validation.Validator;
@@ -19,11 +21,13 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
 
     private final DefaultLoginAttemptService loginAttemptService;
     private final DefaultTotpService totpService;
+    private final DefaultPasswordResetTokenService passwordResetTokenService;
 
-    public DefaultUserService(UserProperties userProperties, DefaultUserRepository userRepository, Validator validator, DefaultLoginAttemptService loginAttemptService, DefaultTotpService totpService) {
+    public DefaultUserService(UserProperties userProperties, DefaultUserRepository userRepository, Validator validator, DefaultLoginAttemptService loginAttemptService, DefaultTotpService totpService, DefaultPasswordResetTokenService passwordResetTokenService) {
         super(userProperties, userRepository, validator);
         this.loginAttemptService = loginAttemptService;
         this.totpService = totpService;
+        this. passwordResetTokenService = passwordResetTokenService;
     }
 
     @Override
@@ -115,6 +119,25 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         userRepository.save(user);
     }
 
+    public void resetPassword(String token, String newPassword) throws InterruptedException {
+        Thread.sleep(500);
+        System.out.println("dupa1");
+        DefaultPasswordResetToken resetToken = passwordResetTokenService.getPasswordResetToken(token);
+        if (resetToken == null) {
+            System.out.println("dupa1.5");
+            throw new IllegalArgumentException("Invalid password reset token. Try again.");
+        }
+        System.out.println("dupa2");
+        DefaultUser user = resetToken.getUser();
 
+
+        validatePassword(newPassword);
+        System.out.println("dupa3");
+        System.out.println("dupa4");
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        passwordResetTokenService.deletePasswordResetToken(resetToken);
+        System.out.println("dupa5");
+    }
 
 }
