@@ -1,9 +1,7 @@
 package com.seclib.user.service;
 
 import com.seclib.config.UserProperties;
-import com.seclib.exception.ApiException;
-import com.seclib.exception.TotpException;
-import com.seclib.exception.UserException;
+import com.seclib.exception.*;
 import com.seclib.loginAttempt.model.DefaultLoginAttempt;
 import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
 import com.seclib.Totp.service.DefaultTotpService;
@@ -13,7 +11,6 @@ import com.seclib.user.model.DefaultUser;
 import com.seclib.user.repository.DefaultUserRepository;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
-import com.seclib.exception.LoginAttemptException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
 @Service
@@ -27,7 +24,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         super(userProperties, userRepository, validator);
         this.loginAttemptService = loginAttemptService;
         this.totpService = totpService;
-        this. passwordResetTokenService = passwordResetTokenService;
+        this.passwordResetTokenService = passwordResetTokenService;
     }
 
     @Override
@@ -119,25 +116,32 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         userRepository.save(user);
     }
 
+    public String forgotPassword(DefaultUser userFromRequest) throws PasswordResetException, InterruptedException{
+        Thread.sleep(500);
+        if (!userProperties.isPasswordResetEnabled()) {
+            throw new PasswordResetException(403, "Password reset is disabled");
+        }
+        DefaultUser userInDB = userRepository.findById(userFromRequest.getId()).orElse(null);
+        if (userInDB == null) {
+            throw new UserException(401, "User not found");
+        }
+        DefaultPasswordResetToken token = passwordResetTokenService.createPasswordResetToken(userInDB);
+        return token.getToken();
+    }
+
     public void resetPassword(String token, String newPassword) throws InterruptedException {
         Thread.sleep(500);
-        System.out.println("dupa1");
         DefaultPasswordResetToken resetToken = passwordResetTokenService.getPasswordResetToken(token);
         if (resetToken == null) {
-            System.out.println("dupa1.5");
-            throw new IllegalArgumentException("Invalid password reset token. Try again.");
+            throw new PasswordResetException(403, "Invalid password reset token");
         }
-        System.out.println("dupa2");
         DefaultUser user = resetToken.getUser();
 
 
         validatePassword(newPassword);
-        System.out.println("dupa3");
-        System.out.println("dupa4");
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         passwordResetTokenService.deletePasswordResetToken(resetToken);
-        System.out.println("dupa5");
     }
 
 }

@@ -61,9 +61,9 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         if (existingUser != null) {
             throw new UserException(400, "User with this ID already exists");
         }
-
-        validatePassword(user.getPassword());
-
+        if (userProperties.isPasswordPolicyEnabled()) {
+            validatePassword(user.getPassword());
+        }
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         System.out.println("User password: " + user.getPassword());
@@ -87,6 +87,10 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
             throw new PasswordValidationException(400, "Weak password");
         }
         System.out.println("Password is valid");
+    }
+
+    public T findById(Long id) {
+        return userRepository.findById(id).orElse(null);
     }
 
     protected abstract T createInstance(Long id, String password);

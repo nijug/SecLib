@@ -15,6 +15,9 @@ public class UserProperties {
     private boolean twoFactorAuthEnabled = true;
     private boolean ipLockingEnabled = true;
     private boolean userLockingEnabled = true;
+    private boolean passwordPolicyEnabled = true;
+    private boolean passwordResetEnabled = true;
+
     private int ipMaxAttempts = 2;
     private long ipLockTime = 1 * 60 * 1000; //1 minute
     private int userMaxAttempts = 2;

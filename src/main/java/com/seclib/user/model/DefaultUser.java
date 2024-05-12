@@ -1,27 +1,31 @@
 package com.seclib.user.model;
 
 
+import com.seclib.userRoles.model.BaseRole;
+import com.seclib.userRoles.model.DefaultRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
+
+@Getter
+@Setter
 @Entity
 public class DefaultUser extends BaseUser {
 
-    @Getter
-    @Setter // for testing purposes
     @Column(name = "failed_attempts")
     private int failedAttempts = 0;
 
-    @Getter
-    @Setter
     @Column(name = "lock_time")
     private long lockTime = 0;
 
-    @Getter
-    @Setter
+    @Column(name = "totp_secret")
     private String totpSecret;
+
+    private String role;
+
 
     protected DefaultUser() {
     }

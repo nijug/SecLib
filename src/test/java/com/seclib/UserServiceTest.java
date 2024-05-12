@@ -74,6 +74,11 @@ public class UserServiceTest {
         when(userProperties.getIpLockTime()).thenReturn(1*60*1000L);
         when(userProperties.getUserMaxAttempts()).thenReturn(3);
         when(userProperties.getUserLockTime()).thenReturn(1*60*1000L);
+        when(passwordEncoder.matches(Mockito.anyString(), Mockito.anyString())).thenAnswer(invocation -> {
+            String arg0 = invocation.getArgument(0);
+            String arg1 = invocation.getArgument(1);
+            return arg0.equals(arg1);
+        });
         request = new MockHttpServletRequest();
         request.setRemoteAddr("127.0.0.1");
 
@@ -321,22 +326,27 @@ public class UserServiceTest {
         DefaultUser userForLogin = new DefaultUser(testUser.getId(), "WrongPassword!");
         assertThrows(UserException.class, () -> userService.login(userForLogin, new MockHttpSession(), request));
     }
+
     @Test
     public void testResetPassword() throws InterruptedException {
-        String token = "testToken";
+        when(userProperties.isPasswordResetEnabled()).thenReturn(true);
+        Long userId = testUser.getId();
         String newPassword = "newPassword123!";
         DefaultPasswordResetToken resetToken = new DefaultPasswordResetToken();
-        DefaultUser user = new DefaultUser(testUser.getId(), "Password123!");
-        resetToken.setUser(user);
+        resetToken.setUser(testUser);
 
-        Mockito.when(passwordResetTokenService.getPasswordResetToken(token)).thenReturn(resetToken);
-        Mockito.when(passwordEncoder.encode(newPassword)).thenReturn("encodedPassword");
+        when(defaultUserRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(passwordResetTokenService.createPasswordResetToken(testUser)).thenReturn(resetToken);
+        when(passwordResetTokenService.getPasswordResetToken(resetToken.getToken())).thenReturn(resetToken);
 
+        String token = userService.forgotPassword(testUser);
         userService.resetPassword(token, newPassword);
 
-        verify(passwordResetTokenService, times(1)).getPasswordResetToken(token);
-        verify(passwordEncoder, times(1)).encode(newPassword);
-        verify(defaultUserRepository, times(1)).save(any(DefaultUser.class));
-        verify(passwordResetTokenService, times(1)).deletePasswordResetToken(resetToken);
+        DefaultUser updatedUser = defaultUserRepository.findById(userId).orElse(null);
+        assertNotNull(updatedUser);
+
+        Argon2PasswordEncoder encoder = new Argon2PasswordEncoder(16, 32, 1, 7168, 5);
+        assertTrue(encoder.matches(newPassword, updatedUser.getPassword()));
     }
+
 }

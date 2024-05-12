@@ -3,6 +3,7 @@ plugins {
 	id 'org.springframework.boot' version '3.2.3'
 	id 'io.spring.dependency-management' version '1.1.4'
 	id 'org.jetbrains.kotlin.jvm'
+	id 'maven-publish'
 }
 
 group = 'com'
@@ -19,6 +20,27 @@ configurations {
 
 repositories {
 	mavenCentral()
+}
+
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+			artifactId = 'SecLib'
+
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
+				}
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+		}
+	}
+	repositories {
+		mavenLocal()
+	}
 }
 
 dependencies {
@@ -51,4 +73,8 @@ tasks.named('test') {
 }
 kotlin {
 	jvmToolchain(21)
+}
+
+tasks.register('cleanBuildPublish') {
+	dependsOn 'clean', 'build', 'publishToMavenLocal'
 }
