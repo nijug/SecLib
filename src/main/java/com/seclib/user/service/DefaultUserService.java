@@ -33,13 +33,13 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
     }
 
     @Override
-    public void register(DefaultUser user) throws ApiException, InterruptedException {
-        super.register(user);
+    public DefaultUser register(DefaultUser user) throws ApiException, InterruptedException {
+        DefaultUser registeredUser= super.register(user);
         if (userProperties.isTwoFactorAuthEnabled()) {
             setTwoFactorAuthKey(user);
         }
+        return registeredUser;
     }
-
 
     public DefaultUser login(DefaultUser userFromRequest, HttpSession session, HttpServletRequest request) throws ApiException {
         DefaultUser userInDB = userRepository.findById(userFromRequest.getId()).orElse(null);

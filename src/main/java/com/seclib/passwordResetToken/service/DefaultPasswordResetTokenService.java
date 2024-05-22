@@ -6,7 +6,7 @@ import com.seclib.user.model.DefaultUser;
 import org.springframework.stereotype.Service;
 
 @Service
-public class DefaultPasswordResetTokenService extends BasePasswordResetTokenService<DefaultPasswordResetToken, DefaultUser, DefaultPasswordResetTokenRepository> {
+public class DefaultPasswordResetTokenService extends BasePasswordResetTokenService<DefaultUser, DefaultPasswordResetToken, DefaultPasswordResetTokenRepository> {
 
     public DefaultPasswordResetTokenService(DefaultPasswordResetTokenRepository passwordResetTokenRepository) {
         super(passwordResetTokenRepository);

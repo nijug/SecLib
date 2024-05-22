@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import java.util.Calendar;
 import java.util.UUID;
 
-@Service
-public abstract class BasePasswordResetTokenService<T extends BasePasswordResetToken<U>, U extends BaseUser, R extends BasePasswordResetTokenRepository<T, U, Long>> {
+
+public abstract class BasePasswordResetTokenService<U extends BaseUser, T extends BasePasswordResetToken<U> ,R extends BasePasswordResetTokenRepository<T, U, Long>> {
 
     protected R passwordResetTokenRepository;
 

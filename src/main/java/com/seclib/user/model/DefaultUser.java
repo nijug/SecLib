@@ -1,11 +1,7 @@
 package com.seclib.user.model;
 
-
-import com.seclib.userRoles.model.BaseRole;
-import com.seclib.userRoles.model.DefaultRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,7 +21,6 @@ public class DefaultUser extends BaseUser {
     private String totpSecret;
 
     private String role;
-
 
     protected DefaultUser() {
     }

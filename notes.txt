@@ -2,11 +2,12 @@ Providing the following library functionality related to data security:
 - user registration and login D
 - authentication and authorization D
 - two-factor authentication D
-- password recovery D // zapytać o maila
+- password recovery D
+- role-based access control -D
 - work monitoring (to detect potential attacks/identity theft)
 - social login // use apis from google, facebook, etc.
 - session consistency control
-- role-based access control
+
 - honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint.
 Creating a simple web application to present the library's capabilities
 

@@ -50,7 +50,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         return userInDB;
     }
 
-    public void register(T user) throws ApiException, InterruptedException {
+    public T register(T user) throws ApiException, InterruptedException {
         Thread.sleep(500);
         Set<ConstraintViolation<T>> violations = validator.validate(user);
         if (!violations.isEmpty()) {
@@ -69,6 +69,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         System.out.println("User password: " + user.getPassword());
 
         userRepository.save(user);
+        return user;
     }
 
 
