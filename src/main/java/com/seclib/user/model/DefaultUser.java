@@ -25,8 +25,8 @@ public class DefaultUser extends BaseUser {
     protected DefaultUser() {
     }
 
-    public DefaultUser(Long id, String password) {
-        super(id, password);
+    public DefaultUser(String username, String password) {
+        super(username, password);
     }
 
     public void resetFailedAttempts() {

@@ -1,9 +1,10 @@
 package com.seclib;
 
 import com.seclib.config.AuthorizationProperties;
+import com.seclib.loginAttempt.repository.DefaultLoginAttemptRepository;
+import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
 import com.seclib.userRoles.permissions.PermissionAspect;
 import com.seclib.userRoles.permissions.RequiredPermissions;
-import com.seclib.userRoles.service.DefaultRoleService;
 import com.seclib.user.model.DefaultUser;
 import com.seclib.user.service.DefaultUserService;
 import jakarta.servlet.http.HttpSession;
@@ -15,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -57,60 +57,64 @@ class RolePermissionTests {
 
     @Test
     void testCheckPermission() throws NoSuchMethodException {
-        DefaultUser user = new DefaultUser(1L, "password");
+        DefaultUser user= new DefaultUser("testUser", "Password123!");
         user.setRole("admin");
 
         when(session.getAttribute("userId")).thenReturn(1L);
         when(userService.findById(1L)).thenReturn(user);
         when(joinPoint.getSignature()).thenReturn(methodSignature);
+        when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
         when(methodSignature.getMethod()).thenReturn(TestClass.class.getMethod("methodWithRequiredPermissions", HttpSession.class));
 
-        permissionAspect.checkPermission(joinPoint, session);
-
+        assertDoesNotThrow(() -> permissionAspect.checkPermission(joinPoint));
         verify(userService, times(1)).findById(1L);
     }
 
     @Test
     void testCheckPermissionWithoutRequiredPermissions() throws NoSuchMethodException {
-        DefaultUser user = new DefaultUser(1L, "password");
+        DefaultUser user = new DefaultUser("testUser", "Password123!");
         user.setRole("user"); // The "user" role does not have the "READ" permission
 
         when(session.getAttribute("userId")).thenReturn(1L);
         when(userService.findById(1L)).thenReturn(user);
         when(joinPoint.getSignature()).thenReturn(methodSignature);
+        when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
         when(methodSignature.getMethod()).thenReturn(TestClass.class.getMethod("methodWithRequiredPermissions", HttpSession.class));
 
-        assertThrows(SecurityException.class, () -> permissionAspect.checkPermission(joinPoint, session));
+        assertThrows(SecurityException.class, () -> permissionAspect.checkPermission(joinPoint));
     }
 
     @Test
     void testCheckPermissionWithUserNotFound() {
         when(session.getAttribute("userId")).thenReturn(1L);
-        when(userService.findById(1L)).thenReturn(null); // The user is not found
+        when(userService.findById(1L)).thenReturn(null);
         when(joinPoint.getSignature()).thenReturn(methodSignature);
+        when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
 
-        assertThrows(SecurityException.class, () -> permissionAspect.checkPermission(joinPoint, session));
+        assertThrows(SecurityException.class, () -> permissionAspect.checkPermission(joinPoint));
     }
 
     @Test
     void testCheckPermissionWithoutUserIdInSession() {
         when(session.getAttribute("userId")).thenReturn(null); // The session does not contain a user ID
         when(joinPoint.getSignature()).thenReturn(methodSignature);
+        when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
 
-        assertThrows(SecurityException.class, () -> permissionAspect.checkPermission(joinPoint, session));
+        assertThrows(SecurityException.class, () -> permissionAspect.checkPermission(joinPoint));
     }
 
     @Test
     void testCheckPermissionWithoutRequiredPermissionsAnnotation() throws NoSuchMethodException {
-        DefaultUser user = new DefaultUser(1L, "password");
+        DefaultUser user = new DefaultUser("testUser", "Password123!");
         user.setRole("admin");
 
         when(session.getAttribute("userId")).thenReturn(1L);
         when(userService.findById(1L)).thenReturn(user);
         when(joinPoint.getSignature()).thenReturn(methodSignature);
+        when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
         when(methodSignature.getMethod()).thenReturn(TestClass.class.getMethod("methodWithoutRequiredPermissions", HttpSession.class));
 
-        assertDoesNotThrow(() -> permissionAspect.checkPermission(joinPoint, session));
+        assertDoesNotThrow(() -> permissionAspect.checkPermission(joinPoint));
     }
 
     public static class TestClass {

@@ -27,25 +27,27 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         this.passwordResetTokenService = passwordResetTokenService;
     }
 
-    @Override
-    protected DefaultUser createInstance(Long id, String password) {
-        return new DefaultUser(id, password);
+
+    public DefaultUser register(String usernameFromRequest, String passwordFromRequest) throws ApiException, InterruptedException {
+        return registerUser(usernameFromRequest, passwordFromRequest, null);
     }
 
-    @Override
-    public DefaultUser register(DefaultUser user) throws ApiException, InterruptedException {
-        DefaultUser registeredUser= super.register(user);
+    public DefaultUser register(String usernameFromRequest, String passwordFromRequest, String role) throws ApiException, InterruptedException {
+        return registerUser(usernameFromRequest, passwordFromRequest, role);
+    }
+
+    private DefaultUser registerUser(String usernameFromRequest, String passwordFromRequest, String role) throws ApiException, InterruptedException {
+        DefaultUser registeredUser = super.register(usernameFromRequest, passwordFromRequest);
+        if (role != null) {
+            registeredUser.setRole(role);
+        }
         if (userProperties.isTwoFactorAuthEnabled()) {
-            setTwoFactorAuthKey(user);
+            setTwoFactorAuthKey(registeredUser);
         }
         return registeredUser;
     }
 
-    public DefaultUser login(DefaultUser userFromRequest, HttpSession session, HttpServletRequest request) throws ApiException {
-        DefaultUser userInDB = userRepository.findById(userFromRequest.getId()).orElse(null);
-        if (userInDB == null) {
-            throw new UserException(401, "User not found");
-        }
+    public DefaultUser login(String usernameFromRequest, String passwordFromRequest, String Totp, HttpSession session, HttpServletRequest request) throws ApiException, InterruptedException {
 
         DefaultLoginAttempt loginAttempt = null;
         if (userProperties.isIpLockingEnabled()) {
@@ -61,7 +63,9 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
             }
         }
 
-        if (!passwordEncoder.matches(userFromRequest.getPassword(), userInDB.getPassword())) {
+        DefaultUser userInDB = super.login(usernameFromRequest,passwordFromRequest );
+
+        if (!passwordEncoder.matches(passwordFromRequest, userInDB.getPassword())) {
             if (loginAttempt != null) {
                 incrementFailedAttempts(loginAttempt);
             }
@@ -81,8 +85,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         }
 
         if (userInDB.getTotpSecret() != null) {
-            String totpOrRecoveryKey = request.getHeader("X-TOTP");
-            if (!totpService.validateTotp(userInDB.getTotpSecret(), totpOrRecoveryKey, session)) {
+            if (!totpService.validateTotp(userInDB.getTotpSecret(), Totp, session)) {
                 throw new TotpException(401, "Invalid TOTP");
             }
         }
@@ -116,12 +119,12 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         userRepository.save(user);
     }
 
-    public String forgotPassword(DefaultUser userFromRequest) throws PasswordResetException, InterruptedException{
+    public String forgotPassword(String usernameFromRequest) throws PasswordResetException, InterruptedException{
         Thread.sleep(500);
         if (!userProperties.isPasswordResetEnabled()) {
             throw new PasswordResetException(403, "Password reset is disabled");
         }
-        DefaultUser userInDB = userRepository.findById(userFromRequest.getId()).orElse(null);
+        DefaultUser userInDB = userRepository.findByUsername(usernameFromRequest).orElse(null);
         if (userInDB == null) {
             throw new UserException(401, "User not found");
         }
@@ -143,5 +146,11 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         userRepository.save(user);
         passwordResetTokenService.deletePasswordResetToken(resetToken);
     }
+
+    @Override
+    protected DefaultUser createNewUser(String username, String password) {
+        return new DefaultUser(username, password);
+    }
+
 
 }

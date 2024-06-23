@@ -2,6 +2,7 @@ package com.seclib.config;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
@@ -10,6 +11,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "user")
 public class UserProperties {
+
+    @Autowired
     private PasswordPolicy passwordPolicy = new PasswordPolicy();
     //defining default values
     private boolean twoFactorAuthEnabled = true;

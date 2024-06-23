@@ -7,6 +7,7 @@ Providing the following library functionality related to data security:
 - work monitoring (to detect potential attacks/identity theft)
 - social login // use apis from google, facebook, etc.
 - session consistency control
+- rate limiter
 
 - honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint.
 Creating a simple web application to present the library's capabilities

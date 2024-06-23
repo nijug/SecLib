@@ -10,6 +10,7 @@ import java.util.Set;
 public abstract class BaseRole {
 
     @Setter
+    @Getter
     private String name;
     private BaseRole parentRole;
 

@@ -21,9 +21,16 @@ public abstract class BaseUser {
     @Setter
     private String password;
 
-    protected BaseUser(Long id, String password) {
-        this.id = id;
+    @NotNull(message = "Username cannot be null")
+    @Size(min = 3, message = "Username must be at least 3 characters")
+    @Column(unique = true)
+    @Getter
+    @Setter
+    private String username;
+
+    protected BaseUser(String username, String password) {
         this.password = password;
+        this.username = username;
     }
 
     @Override

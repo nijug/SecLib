@@ -1,5 +1,6 @@
 package com.seclib.Totp.service;
 
+import com.seclib.exception.QRCodeGenerationException;
 import jakarta.servlet.http.HttpSession;
 import org.jboss.aerogear.security.otp.Totp;
 import org.jboss.aerogear.security.otp.api.Base32;
@@ -43,14 +44,23 @@ public abstract class BaseTotpService {
         return valid;
     }
 
-    public byte[] generateQRCodeImage(String text, int width, int height) throws WriterException, IOException {
+    public byte[] generateQRCodeImage(String text, int width, int height) throws QRCodeGenerationException {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
         Map<EncodeHintType, ErrorCorrectionLevel> hints = new HashMap<>();
         hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
-        BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height, hints);
+        BitMatrix bitMatrix;
+        try {
+            bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, width, height, hints);
+        } catch (WriterException e) {
+            throw new QRCodeGenerationException("Error generating QR code");
+        }
 
         ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
-        MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
+        try {
+            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
+        } catch (IOException e) {
+            throw new QRCodeGenerationException("Error writing QR code to output stream");
+        }
         return pngOutputStream.toByteArray();
     }
 }

@@ -30,43 +30,42 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         this.validator = validator;
     }
 
-    public T createUser(Long id, String password) {
-        T user = createInstance(id, password);
-        userRepository.save(user);
-        return user;
-    }
-
-    public T login(T userFromRequest) throws ApiException, InterruptedException {
+    public T login(String username, String password) throws ApiException, InterruptedException {
         Thread.sleep(500);
-        T userInDB = userRepository.findById(userFromRequest.getId()).orElse(null);
+        T userInDB = userRepository.findByUsername(username).orElse(null);
+        System.out.println("User from request: " + username);
         if (userInDB == null) {
             throw new UserException(401, "User not found");
         }
 
-        if (!passwordEncoder.matches(userFromRequest.getPassword(), userInDB.getPassword())) {
+        if (!passwordEncoder.matches(password, userInDB.getPassword())) {
             throw new UserException(401, "Invalid password");
         }
 
         return userInDB;
     }
 
-    public T register(T user) throws ApiException, InterruptedException {
+    public T register(String usernameFromRequest, String passwordFromRequest) throws ApiException, InterruptedException {
         Thread.sleep(500);
+        T user = createNewUser(usernameFromRequest, passwordFromRequest);
         Set<ConstraintViolation<T>> violations = validator.validate(user);
         if (!violations.isEmpty()) {
             throw new ConstraintViolationException(violations);
         }
 
-        T existingUser = userRepository.findById(user.getId()).orElse(null);
+
+        T existingUser = userRepository.findByUsername(usernameFromRequest).orElse(null);
         if (existingUser != null) {
-            throw new UserException(400, "User with this ID already exists");
+            throw new UserException(400, "User with this username already exists");
         }
+
         if (userProperties.isPasswordPolicyEnabled()) {
-            validatePassword(user.getPassword());
+            validatePassword(passwordFromRequest);
         }
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
+        String encodedPassword = passwordEncoder.encode(passwordFromRequest);
         user.setPassword(encodedPassword);
         System.out.println("User password: " + user.getPassword());
+        System.out.println("User username: " + user.getUsername());
 
         userRepository.save(user);
         return user;
@@ -94,5 +93,11 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         return userRepository.findById(id).orElse(null);
     }
 
-    protected abstract T createInstance(Long id, String password);
+    public T findByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
+
+    protected abstract T createNewUser(String username, String password);
+
+
 }

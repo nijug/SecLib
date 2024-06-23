@@ -1,20 +1,26 @@
 package com.seclib.userRoles.service;
 
+import com.seclib.config.AuthorizationProperties;
+import com.seclib.user.model.BaseUser;
+import com.seclib.user.repository.BaseUserRepository;
+import com.seclib.user.service.BaseUserService;
 import com.seclib.userRoles.model.BaseRole;
-import com.seclib.userRoles.permissions.Permission;
 
-import java.util.HashMap;
-import java.util.Map;
 
-public abstract class BaseRoleService<T extends BaseRole> {
+public abstract class BaseRoleService<T extends BaseRole, U extends BaseUserService<? extends BaseUser, ? extends BaseUserRepository<?, Long>>> {
 
-    protected Map<Long, T> roleMap = new HashMap<>();
+    private final AuthorizationProperties authorizationProperties;
+    protected final U userService;
 
-    public boolean hasPermission(T role, Permission permission) {
-        return role.getPermissions().contains(permission);
+    public BaseRoleService(AuthorizationProperties authorizationProperties, U userService) {
+        this.authorizationProperties = authorizationProperties;
+        this.userService = userService;
     }
 
-    public T getRoleById(Long id) {
-        return roleMap.get(id);
+    public boolean isRoleBasedAuthorizationEnabled() {
+        return authorizationProperties.isRoleBasedAuthorizationEnabled();
     }
+
+
+
 }
