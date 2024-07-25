@@ -66,6 +66,7 @@ dependencies {
 	implementation 'org.springframework:spring-webmvc'
 	implementation 'com.google.zxing:core:3.5.3'
 	implementation 'com.google.zxing:javase:3.5.2'
+	implementation  group: 'com.googlecode.owasp-java-html-sanitizer', name: 'owasp-java-html-sanitizer', version: '20240325.1'
 
 }
 
