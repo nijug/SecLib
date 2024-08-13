@@ -14,12 +14,9 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "security")
 public class AuthorizationProperties {
 
+    @Setter
     private Map<String, RoleProperties> roles;
     private boolean roleBasedAuthorizationEnabled = true;
-
-    public void setRoles(Map<String, RoleProperties> roles) {
-        this.roles = roles;
-    }
 
     @Getter
     @Setter

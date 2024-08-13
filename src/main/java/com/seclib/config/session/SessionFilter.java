@@ -33,7 +33,7 @@ public class SessionFilter implements Filter {
             if (properties.isLoginRequired()) {
                 logger.info("Login is required");
                 if (properties.isRedirectionEnabled()) {
-                    logger.info("Redirection is enabled, redirecting to: " + properties.getRedirectionUrl());
+                    logger.info("Redirection is enabled, redirecting to: {}", properties.getRedirectionUrl());
                     httpResponse.sendRedirect(properties.getRedirectionUrl());
                 } else {
                     logger.info("Redirection is not enabled, sending unauthorized error");
@@ -43,7 +43,7 @@ public class SessionFilter implements Filter {
                 if (roleService.isRoleBasedAuthorizationEnabled()) {
                     String unauthenticatedUserRoleName = properties.getRoleForUnauthenticatedUsers();
                     if (session == null) {
-                        logger.info("Creating new session and setting role to: " + unauthenticatedUserRoleName);
+                        logger.info("Creating new session and setting role to: {}", unauthenticatedUserRoleName);
                         session = httpRequest.getSession(true);
                         session.setAttribute("role", unauthenticatedUserRoleName);
                     }
