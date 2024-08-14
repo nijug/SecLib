@@ -63,4 +63,9 @@ public abstract class BaseTotpService {
         }
         return pngOutputStream.toByteArray();
     }
+
+    public String generateCurrentNumber(String secretKey) {
+        Totp totpGenerator = new Totp(secretKey);
+        return totpGenerator.now();
+    }
 }

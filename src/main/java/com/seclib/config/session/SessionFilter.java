@@ -27,6 +27,8 @@ public class SessionFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         HttpSession session = httpRequest.getSession(false);
+        String path = httpRequest.getRequestURI();
+        logger.info("Request from path:{}", path);
 
         if (session == null || session.getAttribute("userId") == null) {
             logger.info("Session is null or userId is not present in the session");
