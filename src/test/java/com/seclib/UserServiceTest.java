@@ -90,7 +90,7 @@ public class UserServiceTest {
     public void testLoginWithAccountLockingDisabledAndExistingUser() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
-        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345", new MockHttpSession(), request );
+        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345", request );
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -98,21 +98,21 @@ public class UserServiceTest {
     public void testLoginWithAccountLockingDisabledAndNonExistingUser(){
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findByUsername("testUser2")).thenReturn(Optional.empty());
-        assertThrows(UserException.class, () -> userService.login("testUser2", "Password123!", "12345", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser2", "Password123!", "12345", request ));
     }
 
     @Test
     public void testLoginWithAccountLockingDisabledAndExistingUserWithWrongPassword(){
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findById(anyLong())).thenReturn(Optional.of(testUser));
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", request));
     }
 
     @Test
     public void testLoginWithIpLockingEnabledAndCorrectPassword() throws InterruptedException {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
-        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345", new MockHttpSession(), request );
+        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345", request );
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -120,7 +120,7 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledAndIncorrectPassword(){
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", request ));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class UserServiceTest {
         when(userProperties.getIpLockTime()).thenReturn(6000L);
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000 ));
-        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong", "12345", new MockHttpSession(), request ));
+        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong", "12345", request ));
     }
     @Test
     public void testLoginWithIpLockingEnabledAndIncorrectPasswordAndBlockedIp(){
@@ -138,7 +138,7 @@ public class UserServiceTest {
 
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
-        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong" , "12345", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong" , "12345", request));
     }
 
     @Test
@@ -152,16 +152,16 @@ public class UserServiceTest {
 
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(firstAttempt, secondAttempt, thirdAttempt);
 
-        assertThrows(UserException.class, () -> userService.login("testUser", "12345", "Wrong", new MockHttpSession(), request));
-        assertThrows(UserException.class, () -> userService.login("testUser", "12345", "Wrong" , new MockHttpSession(), request ));
-        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "12345", "Wrong", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "12345", "Wrong",  request));
+        assertThrows(UserException.class, () -> userService.login("testUser", "12345", "Wrong" , request ));
+        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "12345", "Wrong",  request ));
     }
 
     @Test
     public void testLoginWithIpLockingEnabledAndNonExistingUser(){
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser2")).thenReturn(Optional.empty());
-        assertThrows(UserException.class, () -> userService.login("testUser2", "12345", "Password123!" , new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser2", "12345", "Password123!" , request ));
     }
 
     @Test
@@ -169,7 +169,7 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000 ));
-        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345", new MockHttpSession(), request );
+        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345", request );
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -180,7 +180,7 @@ public class UserServiceTest {
         when(userProperties.getIpLockTime()).thenReturn(5000L);
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000));
-        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Password123!", "12345", new MockHttpSession(), request ));
+        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Password123!", "12345",  request ));
     }
 
     @Test
@@ -189,7 +189,7 @@ public class UserServiceTest {
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000));
-        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong" , "12345", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong" , "12345",  request));
     }
 
     @Test
@@ -199,7 +199,7 @@ public class UserServiceTest {
         when(userProperties.getIpLockTime()).thenReturn(5000L);
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
-        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Password123!" , "12345", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Password123!" , "12345", request));
     }
 
     @Test
@@ -208,14 +208,14 @@ public class UserServiceTest {
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
-        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong", "12345", new MockHttpSession(), request));
+        assertThrows(LoginAttemptException.class, () -> userService.login("testUser", "Wrong", "12345", request));
     }
 
     @Test
     public void testLoginWithUserLockingEnabledAndCorrectPassword() throws InterruptedException {
         when(userProperties.isUserLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
-        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345", new MockHttpSession(), request );
+        DefaultUser loggedInUser = userService.login("testUser","Password123!", "12345",  request );
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
 
@@ -223,7 +223,7 @@ public class UserServiceTest {
     public void testLoginWithUserLockingEnabledAndIncorrectPassword(){
         when(userProperties.isUserLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", request ));
     }
 
     @Test
@@ -234,7 +234,7 @@ public class UserServiceTest {
         when(userProperties.getUserMaxAttempts()).thenReturn(3);
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
-        assertThrows(UserException.class, () -> userService.login("testUser", "Password123!" , "12345",  new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Password123!" , "12345",   request ));
     }
 
     @Test
@@ -243,7 +243,7 @@ public class UserServiceTest {
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong", "12345", request));
     }
 
     @Test
@@ -252,11 +252,11 @@ public class UserServiceTest {
         when(userProperties.getUserMaxAttempts()).thenReturn(2);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
 
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345",  request ));
 
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345",  request ));
 
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345", request ));
     }
 
     @Test
@@ -267,7 +267,7 @@ public class UserServiceTest {
         when(userProperties.getUserMaxAttempts()).thenReturn(3);
         testUser.setFailedAttempts(5);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
-        assertThrows(UserException.class, () -> userService.login("testUser", "Password123!" , "12345", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Password123!" , "12345",  request));
     }
 
     @Test
@@ -277,7 +277,7 @@ public class UserServiceTest {
         when(userProperties.getUserMaxAttempts()).thenReturn(3);
         testUser.setFailedAttempts(5);
         testUser.setLockTime(System.currentTimeMillis() - 3000);
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345", request));
     }
 
     @Test
@@ -288,7 +288,7 @@ public class UserServiceTest {
         when(userProperties.getUserMaxAttempts()).thenReturn(3);
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis());
-        assertThrows(UserException.class, () -> userService.login("testUser", "Password123!" , "12345", new MockHttpSession(), request ));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Password123!" , "12345", request ));
     }
 
     @Test
@@ -298,7 +298,7 @@ public class UserServiceTest {
         when(userProperties.getUserMaxAttempts()).thenReturn(3);
         testUser.setFailedAttempts(3);
         testUser.setLockTime(System.currentTimeMillis());
-        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345", new MockHttpSession(), request));
+        assertThrows(UserException.class, () -> userService.login("testUser", "Wrong" , "12345",  request));
     }
 
     @Test

@@ -6,11 +6,12 @@ import com.seclib.exception.PasswordValidationException;
 import com.seclib.exception.UserException;
 import com.seclib.user.model.BaseUser;
 import com.seclib.user.repository.BaseUserRepository;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.ConstraintViolation;
-import lombok.Setter;
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
+import lombok.Setter;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 import java.util.Set;
 
@@ -41,6 +42,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         if (!passwordEncoder.matches(password, userInDB.getPassword())) {
             throw new UserException(401, "Invalid password");
         }
+
 
         return userInDB;
     }
@@ -96,6 +98,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
     public T findByUsername(String username) {
         return userRepository.findByUsername(username).orElse(null);
     }
+
 
     protected abstract T createNewUser(String username, String password);
 

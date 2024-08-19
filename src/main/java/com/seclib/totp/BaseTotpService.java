@@ -1,4 +1,4 @@
-package com.seclib.Totp.service;
+package com.seclib.totp;
 
 import com.seclib.exception.QRCodeGenerationException;
 import jakarta.servlet.http.HttpSession;

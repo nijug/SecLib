@@ -27,6 +27,7 @@ public class SessionFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         HttpSession session = httpRequest.getSession(false);
+
         String path = httpRequest.getRequestURI();
         logger.info("Request from path:{}", path);
 

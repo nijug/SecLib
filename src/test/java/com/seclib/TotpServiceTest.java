@@ -1,6 +1,6 @@
 package com.seclib;
 
-import com.seclib.Totp.service.DefaultTotpService;
+import com.seclib.totp.DefaultTotpService;
 import org.jboss.aerogear.security.otp.Totp;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

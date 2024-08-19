@@ -4,7 +4,7 @@ import com.seclib.config.UserProperties;
 import com.seclib.exception.*;
 import com.seclib.loginAttempt.model.DefaultLoginAttempt;
 import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
-import com.seclib.Totp.service.DefaultTotpService;
+import com.seclib.totp.DefaultTotpService;
 import com.seclib.passwordResetToken.model.DefaultPasswordResetToken;
 import com.seclib.passwordResetToken.service.DefaultPasswordResetTokenService;
 import com.seclib.user.model.DefaultUser;
@@ -47,7 +47,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         return registeredUser;
     }
 
-    public DefaultUser login(String usernameFromRequest, String passwordFromRequest, String Totp, HttpSession session, HttpServletRequest request) throws ApiException, InterruptedException {
+    public DefaultUser login(String usernameFromRequest, String passwordFromRequest, String Totp, HttpServletRequest request) throws ApiException, InterruptedException {
 
         DefaultLoginAttempt loginAttempt = null;
         if (userProperties.isIpLockingEnabled()) {
@@ -84,8 +84,10 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
             throw new UserException(403, "This user has been locked, try again later");
         }
 
+        HttpSession oldSession = request.getSession(false);
+
         if (userInDB.getTotpSecret() != null) {
-            if (!totpService.validateTotp(userInDB.getTotpSecret(), Totp, session)) {
+            if (!totpService.validateTotp(userInDB.getTotpSecret(), Totp, oldSession)) {
                 throw new TotpException(401, "Invalid TOTP");
             }
         }
@@ -93,6 +95,13 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         userInDB.resetFailedAttempts();
         userInDB.setLockTime(0);
         userRepository.save(userInDB);
+
+        /* podmiana sesji, ochrona przed session fixation*/
+        if (oldSession != null) {
+            oldSession.invalidate();
+        }
+        HttpSession newSession = request.getSession(true);
+        newSession.setAttribute("userId", userInDB.getId());
 
         return userInDB;
     }
@@ -147,10 +156,20 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         passwordResetTokenService.deletePasswordResetToken(resetToken);
     }
 
+    public void logout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+
+    }
+
+
     @Override
     protected DefaultUser createNewUser(String username, String password) {
         return new DefaultUser(username, password);
     }
+
 
 
 }

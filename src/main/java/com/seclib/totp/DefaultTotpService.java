@@ -1,4 +1,4 @@
-package com.seclib.Totp.service;
+package com.seclib.totp;
 
 import org.springframework.stereotype.Service;
 
