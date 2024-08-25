@@ -6,13 +6,14 @@ Providing the following library functionality related to data security:
 - role-based access control D
 - cors config D
 - csp config D (maybe add nonces)
-- csrf i cha
+- csrf
 - work monitoring (to detect potential attacks/identity theft)
-- session consistency control
+- honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint.
+- rate limiter
+- session consistency control -D
  Implement additional security measures, such as setting the HttpOnly and Secure flags on session cookies. - do it after forcing https
 
-- rate limiter
-- honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint.
+
 Creating a simple web application to present the library's capabilities
 
 

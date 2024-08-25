@@ -1,7 +1,10 @@
 package com.seclib.config;
 
+import com.seclib.config.csrf.CsrfFilter;
+import com.seclib.config.csrf.CsrfFilterProperties;
 import com.seclib.config.session.SessionFilter;
 import com.seclib.config.session.SessionFilterProperties;
+import com.seclib.csrf.CsrfService;
 import com.seclib.userRoles.service.BaseRoleService;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -10,11 +13,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FilterConfig {
 
-    private final SessionFilterProperties properties;
+    private final SessionFilterProperties sessionFilterProperties;
     private final BaseRoleService<?, ?> roleService;
 
     public FilterConfig(SessionFilterProperties properties, BaseRoleService<?, ?> roleService) {
-        this.properties = properties;
+        this.sessionFilterProperties = properties;
         this.roleService = roleService;
     }
 
@@ -22,10 +25,11 @@ public class FilterConfig {
     public FilterRegistrationBean<SessionFilter> sessionFilter() {
         FilterRegistrationBean<SessionFilter> registrationBean = new FilterRegistrationBean<>();
 
-        registrationBean.setFilter(new SessionFilter(properties, roleService));
+        registrationBean.setFilter(new SessionFilter(sessionFilterProperties, roleService));
         registrationBean.addUrlPatterns("/*");
         registrationBean.setOrder(1);
 
         return registrationBean;
     }
+
 }

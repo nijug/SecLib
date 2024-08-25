@@ -20,6 +20,7 @@ public class DefaultUser extends BaseUser {
     @Column(name = "totp_secret")
     private String totpSecret;
 
+    @Column(name = "role")
     private String role;
 
     protected DefaultUser() {

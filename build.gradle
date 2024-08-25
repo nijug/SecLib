@@ -67,6 +67,9 @@ dependencies {
 	implementation 'com.google.zxing:core:3.5.3'
 	implementation 'com.google.zxing:javase:3.5.2'
 	implementation  group: 'com.googlecode.owasp-java-html-sanitizer', name: 'owasp-java-html-sanitizer', version: '20240325.1'
+	implementation 'org.mapstruct:mapstruct:1.6.0'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.0'
+
 
 }
 
@@ -79,4 +82,12 @@ kotlin {
 
 tasks.register('cleanBuildPublish') {
 	dependsOn 'clean', 'build', 'publishToMavenLocal'
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs += ['generated']
+		}
+	}
 }

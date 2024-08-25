@@ -4,9 +4,9 @@ import com.seclib.config.UserProperties;
 import com.seclib.exception.ApiException;
 import com.seclib.exception.PasswordValidationException;
 import com.seclib.exception.UserException;
+import com.seclib.user.dto.BaseUserDTO;
 import com.seclib.user.model.BaseUser;
 import com.seclib.user.repository.BaseUserRepository;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
@@ -15,7 +15,7 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 
 import java.util.Set;
 
-public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepository<T, Long>> {
+public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepository<T, Long>, D extends BaseUserDTO> {
 
     protected final UserProperties userProperties;
     protected R userRepository;
@@ -31,18 +31,17 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         this.validator = validator;
     }
 
-    public T login(String username, String password) throws ApiException, InterruptedException {
+    public T login(D userToLogin) throws ApiException, InterruptedException {
         Thread.sleep(500);
-        T userInDB = userRepository.findByUsername(username).orElse(null);
-        System.out.println("User from request: " + username);
+        T userInDB = userRepository.findByUsername(userToLogin.getUsername()).orElse(null);
+        System.out.println("User from request: " + userToLogin.getUsername());
         if (userInDB == null) {
             throw new UserException(401, "User not found");
         }
 
-        if (!passwordEncoder.matches(password, userInDB.getPassword())) {
+        if (!passwordEncoder.matches(userToLogin.getPassword(), userInDB.getPassword())) {
             throw new UserException(401, "Invalid password");
         }
-
 
         return userInDB;
     }
@@ -54,7 +53,6 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
         if (!violations.isEmpty()) {
             throw new ConstraintViolationException(violations);
         }
-
 
         T existingUser = userRepository.findByUsername(usernameFromRequest).orElse(null);
         if (existingUser != null) {
@@ -74,7 +72,7 @@ public abstract class BaseUserService<T extends BaseUser, R extends BaseUserRepo
     }
 
 
-    public void validatePassword(String password) throws ApiException {
+    protected void validatePassword(String password) throws ApiException {
         String pattern = userProperties.getPasswordPolicy().getPattern();
         if (!password.matches(pattern)) {
             throw new PasswordValidationException(400, "Password does not match the pattern");

@@ -1,42 +1,52 @@
 package com.seclib.user.service;
 
 import com.seclib.config.UserProperties;
+import com.seclib.csrf.CsrfService;
 import com.seclib.exception.*;
 import com.seclib.loginAttempt.model.DefaultLoginAttempt;
 import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
 import com.seclib.totp.DefaultTotpService;
 import com.seclib.passwordResetToken.model.DefaultPasswordResetToken;
 import com.seclib.passwordResetToken.service.DefaultPasswordResetTokenService;
+import com.seclib.user.dto.DefaultUserDTO;
+import com.seclib.user.mapper.DefaultUserMapper;
 import com.seclib.user.model.DefaultUser;
 import com.seclib.user.repository.DefaultUserRepository;
 import jakarta.validation.Validator;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.HttpServletRequest;
+
 @Service
-public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUserRepository> {
+public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUserRepository, DefaultUserDTO> {
 
     private final DefaultLoginAttemptService loginAttemptService;
     private final DefaultTotpService totpService;
     private final DefaultPasswordResetTokenService passwordResetTokenService;
+    private final CsrfService csrfService;
+    @Setter
+    private DefaultUserMapper userMapper;
 
-    public DefaultUserService(UserProperties userProperties, DefaultUserRepository userRepository, Validator validator, DefaultLoginAttemptService loginAttemptService, DefaultTotpService totpService, DefaultPasswordResetTokenService passwordResetTokenService) {
+    public DefaultUserService(UserProperties userProperties, DefaultUserRepository userRepository,
+                              Validator validator, DefaultLoginAttemptService loginAttemptService,
+                              DefaultTotpService totpService, DefaultPasswordResetTokenService passwordResetTokenService,
+                              @Autowired(required = false) CsrfService csrfService, DefaultUserMapper userMapper) {
         super(userProperties, userRepository, validator);
         this.loginAttemptService = loginAttemptService;
         this.totpService = totpService;
         this.passwordResetTokenService = passwordResetTokenService;
+        this.csrfService = csrfService;
+        this.userMapper = userMapper;
     }
 
-
-    public DefaultUser register(String usernameFromRequest, String passwordFromRequest) throws ApiException, InterruptedException {
-        return registerUser(usernameFromRequest, passwordFromRequest, null);
-    }
-
-    public DefaultUser register(String usernameFromRequest, String passwordFromRequest, String role) throws ApiException, InterruptedException {
+    public DefaultUserDTO register(String usernameFromRequest, String passwordFromRequest, String role) throws ApiException, InterruptedException {
         return registerUser(usernameFromRequest, passwordFromRequest, role);
     }
 
-    private DefaultUser registerUser(String usernameFromRequest, String passwordFromRequest, String role) throws ApiException, InterruptedException {
+    private DefaultUserDTO registerUser(String usernameFromRequest, String passwordFromRequest, String role) throws ApiException, InterruptedException {
         DefaultUser registeredUser = super.register(usernameFromRequest, passwordFromRequest);
         if (role != null) {
             registeredUser.setRole(role);
@@ -44,10 +54,10 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         if (userProperties.isTwoFactorAuthEnabled()) {
             setTwoFactorAuthKey(registeredUser);
         }
-        return registeredUser;
+        return userMapper.toDefaultUserDTO(registeredUser);
     }
 
-    public DefaultUser login(String usernameFromRequest, String passwordFromRequest, String Totp, HttpServletRequest request) throws ApiException, InterruptedException {
+    public DefaultUserDTO login(DefaultUserDTO userToLogin, HttpServletRequest request) throws ApiException, InterruptedException {
 
         DefaultLoginAttempt loginAttempt = null;
         if (userProperties.isIpLockingEnabled()) {
@@ -63,9 +73,9 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
             }
         }
 
-        DefaultUser userInDB = super.login(usernameFromRequest,passwordFromRequest );
+        DefaultUser userInDB = super.login(userToLogin);
 
-        if (!passwordEncoder.matches(passwordFromRequest, userInDB.getPassword())) {
+        if (!passwordEncoder.matches(userToLogin.getPassword(), userInDB.getPassword())) {
             if (loginAttempt != null) {
                 incrementFailedAttempts(loginAttempt);
             }
@@ -86,9 +96,11 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
 
         HttpSession oldSession = request.getSession(false);
 
-        if (userInDB.getTotpSecret() != null) {
-            if (!totpService.validateTotp(userInDB.getTotpSecret(), Totp, oldSession)) {
-                throw new TotpException(401, "Invalid TOTP");
+        if (userProperties.isTwoFactorAuthEnabled()) {
+            if (userInDB.getTotpSecret() != null) {
+                if (!totpService.validateTotp(userInDB.getTotpSecret(), userToLogin.getTotpSecret() , oldSession)) {
+                    throw new TotpException(401, "Invalid TOTP");
+                }
             }
         }
 
@@ -103,10 +115,20 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         HttpSession newSession = request.getSession(true);
         newSession.setAttribute("userId", userInDB.getId());
 
-        return userInDB;
+        String csrfToken = null;
+
+        if (this.csrfService != null) {
+            csrfToken = csrfService.generateToken();
+            csrfService.storeToken(newSession, csrfToken);
+        }
+
+        DefaultUserDTO loggedInUser = userMapper.toDefaultUserDTO(userInDB);
+        loggedInUser.setCsrfToken(csrfToken);
+
+        return loggedInUser;
     }
 
-    private void incrementFailedAttempts(DefaultUser user) {
+    private void incrementFailedAttempts(@NotNull DefaultUser user) {
         user.incrementFailedAttempts();
         if (user.getFailedAttempts() >= userProperties.getUserMaxAttempts()) {
             user.setLockTime(System.currentTimeMillis());
@@ -164,12 +186,10 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
 
     }
 
-
     @Override
     protected DefaultUser createNewUser(String username, String password) {
         return new DefaultUser(username, password);
     }
-
 
 
 }

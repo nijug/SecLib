@@ -1,8 +1,6 @@
 package com.seclib;
 
 import com.seclib.config.AuthorizationProperties;
-import com.seclib.loginAttempt.repository.DefaultLoginAttemptRepository;
-import com.seclib.loginAttempt.service.DefaultLoginAttemptService;
 import com.seclib.userRoles.permissions.PermissionAspect;
 import com.seclib.userRoles.permissions.RequiredPermissions;
 import com.seclib.user.model.DefaultUser;
