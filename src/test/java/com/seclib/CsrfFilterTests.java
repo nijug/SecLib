@@ -14,6 +14,10 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerMapping;
+
+import static org.mockito.Mockito.mock;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -46,14 +50,14 @@ class CsrfFilterTests {
         when(csrfProperties.isEnabled()).thenReturn(true);
         when(csrfProperties.getHeaderName()).thenReturn("X-CSRF-TOKEN");
         when(csrfProperties.getRefererDomain()).thenReturn("http://example.com");
-
+        HandlerMethod mockHandlerMethod = mock(HandlerMethod.class);
+        request.setAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE, mockHandlerMethod);
     }
 
     @Test
     void testCsrfFilterWithValidToken() throws Exception {
         String csrfToken = "validCsrfToken";
         session.setAttribute("CSRF_TOKEN", csrfToken);
-
 
         request.setMethod("POST");
         request.addHeader(csrfProperties.getHeaderName(), csrfToken);
@@ -73,6 +77,8 @@ class CsrfFilterTests {
 
         // Perform a POST request
         request.setMethod("POST");
+        request.setSession(session);
+
         csrfFilter.doFilter(request, response, filterChain);
 
         // Verify that the filter chain continues without CSRF validation
@@ -87,6 +93,8 @@ class CsrfFilterTests {
         // Perform a POST request with an invalid referer
         request.setMethod("POST");
         request.addHeader("Referer", "http://invalid-domain.com");
+        request.setSession(session);
+
         csrfFilter.doFilter(request, response, filterChain);
 
         // Verify that an error is sent due to invalid referer
@@ -154,6 +162,7 @@ class CsrfFilterTests {
         when(csrfProperties.getRefererDomain()).thenReturn("http://example.com");
 
         request.setMethod("POST");
+        request.setSession(session);
         request.addHeader("Referer", validReferer);
         csrfFilter.doFilter(request, response, filterChain);
     }
@@ -164,6 +173,8 @@ class CsrfFilterTests {
         when(csrfProperties.getRefererDomain()).thenReturn("http://example.com");
 
         request.setMethod("POST");
+        request.setSession(session);
+
         csrfFilter.doFilter(request, response, filterChain);
 
         assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());

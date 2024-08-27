@@ -115,15 +115,14 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         HttpSession newSession = request.getSession(true);
         newSession.setAttribute("userId", userInDB.getId());
 
+        DefaultUserDTO loggedInUser = userMapper.toDefaultUserDTO(userInDB);
         String csrfToken = null;
 
         if (this.csrfService != null) {
             csrfToken = csrfService.generateToken();
             csrfService.storeToken(newSession, csrfToken);
+            loggedInUser.setCsrfToken(csrfToken);
         }
-
-        DefaultUserDTO loggedInUser = userMapper.toDefaultUserDTO(userInDB);
-        loggedInUser.setCsrfToken(csrfToken);
 
         return loggedInUser;
     }

@@ -8,6 +8,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.Optional;
 
@@ -29,11 +31,11 @@ public class CsrfConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "csrf", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public FilterRegistrationBean<CsrfFilter> csrfFilter(CsrfService csrfService) {
+    public FilterRegistrationBean<CsrfFilter> csrfFilter(CsrfService csrfService, RequestMappingHandlerMapping handlerMapping) {
         FilterRegistrationBean<CsrfFilter> registrationBean = new FilterRegistrationBean<>();
-        registrationBean.setFilter(new CsrfFilter(csrfFilterProperties, csrfService));
+        registrationBean.setFilter(new CsrfFilter(csrfFilterProperties, csrfService, handlerMapping));
         registrationBean.addUrlPatterns("/*");
-        registrationBean.setOrder(2);
+        registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
         return registrationBean;
     }
 }
