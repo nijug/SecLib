@@ -25,8 +25,8 @@ public class CsrfConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "csrf", name = "enabled", havingValue = "true", matchIfMissing = true)
-    public CsrfService csrfService(@Value("${app.secret}") String formSecret) {
-        return new CsrfService(formSecret);
+    public CsrfService csrfService() {
+        return new CsrfService();
     }
 
     @Bean
