@@ -1,8 +1,12 @@
 package com.seclib;
 
+import com.seclib.ipBlocking.BlockedIpRepository;
 import com.seclib.ipBlocking.InMemoryIpBlockService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,11 +14,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class IpBlockInterceptorTest {
 
+    @InjectMocks
     private InMemoryIpBlockService ipBlockService;
+
+    @Mock
+    private BlockedIpRepository blockedIpRepository;
 
     @BeforeEach
     public void setUp() {
-        ipBlockService = new InMemoryIpBlockService();
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test

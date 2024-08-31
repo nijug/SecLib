@@ -1,17 +1,26 @@
 package com.seclib;
 
+import com.seclib.ipBlocking.BlockedIpRepository;
 import com.seclib.ipBlocking.InMemoryIpBlockService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class InMemoryIpBlockServiceTest {
 
+    @InjectMocks
     private InMemoryIpBlockService ipBlockingService;
+
+    @Mock
+    private BlockedIpRepository blockedIpRepository;
 
     @BeforeEach
     public void setUp() {
-        ipBlockingService = new InMemoryIpBlockService();
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test

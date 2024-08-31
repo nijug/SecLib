@@ -7,10 +7,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class IpBlockConfiguration {
 
+    private final BlockedIpRepository blockedIpRepository;
+
+    public IpBlockConfiguration(BlockedIpRepository blockedIpRepository) {
+        this.blockedIpRepository = blockedIpRepository;
+    }
+
     @Bean
     @ConditionalOnMissingBean(IpBlockService.class)
     public IpBlockService inMemoryIpBlockingService() {
-        return new InMemoryIpBlockService();
+        return new InMemoryIpBlockService(blockedIpRepository);
     }
 }
 
