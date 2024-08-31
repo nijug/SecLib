@@ -112,11 +112,12 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         if (oldSession != null) {
             oldSession.invalidate();
         }
+
         HttpSession newSession = request.getSession(true);
         newSession.setAttribute("userId", userInDB.getId());
 
         DefaultUserDTO loggedInUser = userMapper.toDefaultUserDTO(userInDB);
-        String csrfToken = null;
+        String csrfToken;
 
         if (this.csrfService != null) {
             csrfToken = csrfService.generateToken();

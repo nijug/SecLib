@@ -6,10 +6,10 @@ Providing the following library functionality related to data security:
 - role-based access control D
 - cors config D
 - csp config D (maybe add nonces)
-- csrf
+- csrf -d
 - work monitoring (to detect potential attacks/identity theft)
 - honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint.
-- rate limiter
+- social login
 - session consistency control -D
  Implement additional security measures, such as setting the HttpOnly and Secure flags on session cookies. - do it after forcing https
 
@@ -28,6 +28,7 @@ I`m writing Java library in Spring Boot to handle security measures without usin
  Do you understand?
 
 further development:
-- social login
 - option to change session storage
+- rate limiter
+- in memory blocking extended to work for multiple-instance applications
 
