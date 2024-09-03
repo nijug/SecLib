@@ -1,5 +1,6 @@
 package com.seclib.honeypot;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ public class FakePortHoneypot implements Honeypot {
     private final int port;
     private ServerSocket serverSocket;
     private Thread listenerThread;
+    @Getter
     private volatile boolean running;
     private final HoneypotStrategy honeypotStrategy;
     private final HoneypotStrategyService honeypotStrategyService;
@@ -36,7 +38,7 @@ public class FakePortHoneypot implements Honeypot {
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
-                    logAttempt(clientSocket);
+                    logAttempt(clientSocket.getInetAddress().getHostAddress(), honeypotStrategy, honeypotStrategyService);
                     clientSocket.close();
                 } catch (IOException e) {
                     if (!running) {
@@ -77,13 +79,4 @@ public class FakePortHoneypot implements Honeypot {
         }
     }
 
-    private void logAttempt(Socket clientSocket) {
-        String clientIP = clientSocket.getInetAddress().getHostAddress();
-        honeypotStrategyService.handleHoneypotAccess(clientIP,honeypotStrategy);
-    }
-
-    @Override
-    public boolean isRunning() {
-        return running;
-    }
 }

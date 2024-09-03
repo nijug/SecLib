@@ -22,16 +22,22 @@ public class HoneypotService {
         this.honeypotProperties = honeypotProperties;
         this.honeypotFactory = honeypotFactory;
         this.activeHoneypots = new ArrayList<>();
-        System.out.println("dupa");
     }
 
     @EventListener(ContextRefreshedEvent.class)
     public void startHoneypots() {
         if (honeypotProperties.isFakePorts()) {
-            activeHoneypots.addAll(honeypotFactory.createHoneypot("fakeport",honeypotProperties));
-            for (Honeypot honeypot : activeHoneypots) {
-                honeypot.start();
-            }
+            activeHoneypots.addAll(honeypotFactory.createHoneypots("fakeport", honeypotProperties));
+
+        }
+
+        if (honeypotProperties.isFakeCookies()) {
+            activeHoneypots.addAll(honeypotFactory.createHoneypots("fakecookie", honeypotProperties));
+
+        }
+
+        for (Honeypot honeypot : activeHoneypots) {
+            honeypot.start();
         }
     }
 

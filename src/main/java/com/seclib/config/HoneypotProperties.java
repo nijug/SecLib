@@ -16,13 +16,24 @@ import java.util.Optional;
 public class HoneypotProperties {
 
     private HoneypotStrategy globalStrategy = HoneypotStrategy.STRICT;
+    private Optional<HoneypotStrategy> fakePortStrategy = Optional.empty();
+    private Optional<HoneypotStrategy> fakeCookieStrategy = Optional.empty();
     private boolean fakePorts = false;
-    private HoneypotConfig config;
+    private boolean fakeCookies = false;
+    private FakePortHoneypotConfig fakePortHoneypotConfig;
+    private List<FakeCookieHoneypotConfig> fakeCookieHoneypotConfig;
 
     @Data
-    public static class HoneypotConfig {
-
+    public static class FakePortHoneypotConfig {
         private List<Integer> ports;
-        private Optional<HoneypotStrategy> fakePortStrategy = Optional.empty();
+    }
+
+    @Data
+    public static class FakeCookieHoneypotConfig {
+        private String name;
+        private String value;
+        private boolean httpOnly = true;
+        private String path = "/";
+        private int maxAge = 24 * 60 * 60;
     }
 }

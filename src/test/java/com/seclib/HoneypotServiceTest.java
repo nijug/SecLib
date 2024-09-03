@@ -25,7 +25,7 @@ public class HoneypotServiceTest {
     private HoneypotProperties honeypotProperties;
 
     @Mock
-    private HoneypotProperties.HoneypotConfig honeypotConfig;
+    private HoneypotProperties.FakePortHoneypotConfig fakePortHoneypotConfig;
 
     @Mock
     private HoneypotFactory honeypotFactory;
@@ -41,7 +41,7 @@ public class HoneypotServiceTest {
 
         when(honeypotProperties.isFakePorts()).thenReturn(true);
 
-        when(honeypotFactory.createHoneypot(eq("fakeport"), any(HoneypotProperties.class)))
+        when(honeypotFactory.createHoneypots(eq("fakeport"), any(HoneypotProperties.class)))
                 .thenReturn(List.of(fakePortHoneypot));
 
     }
@@ -50,7 +50,7 @@ public class HoneypotServiceTest {
     public void whenContextRefreshedEvent_thenStartHoneypots() {
         honeypotService.startHoneypots();
 
-        verify(honeypotFactory).createHoneypot(eq("fakeport"), any(HoneypotProperties.class));
+        verify(honeypotFactory).createHoneypots(eq("fakeport"), any(HoneypotProperties.class));
         verify(fakePortHoneypot, times(1)).start(); // Should be called once for each port
         assertEquals(1, honeypotService.getActiveHoneypots().size());
     }
