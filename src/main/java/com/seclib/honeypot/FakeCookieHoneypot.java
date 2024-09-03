@@ -6,8 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+
+import java.util.Arrays;
 
 @Slf4j
 public class FakeCookieHoneypot implements Honeypot, HandlerInterceptor {
@@ -37,22 +40,27 @@ public class FakeCookieHoneypot implements Honeypot, HandlerInterceptor {
     }
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    public boolean preHandle(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull Object handler) {
         if (!running) {
             return true;
         }
-
+        boolean hasFakeCookie = false;
+        System.out.println("FakeCookieHoneypot preHandle");
         Cookie[] cookies = request.getCookies();
+        System.out.println("FakeCookieHoneypot preHandle cookies: " + Arrays.toString(cookies));
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (config.getName().equals(cookie.getName()) && !config.getValue().equals(cookie.getValue())) {
+                    hasFakeCookie = true;
                     logAttempt(request.getRemoteAddr(), honeypotStrategy, honeypotStrategyService);
                     return false;
                 }
             }
         }
+        if (!hasFakeCookie) {
+            setFakeCookie(response);
+        }
 
-        setFakeCookie(response);
 
         return true;
     }

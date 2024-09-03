@@ -1,6 +1,7 @@
 package com.seclib.honeypot;
 
 import com.seclib.config.HoneypotProperties;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.springframework.context.event.ContextClosedEvent;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -22,16 +23,20 @@ public class HoneypotService {
         this.honeypotProperties = honeypotProperties;
         this.honeypotFactory = honeypotFactory;
         this.activeHoneypots = new ArrayList<>();
+        System.out.println("HoneypotService created");
     }
 
-    @EventListener(ContextRefreshedEvent.class)
+    @PostConstruct
     public void startHoneypots() {
+        System.out.println("Starting honeypots");
         if (honeypotProperties.isFakePorts()) {
+            System.out.println("Creating fake ports");
             activeHoneypots.addAll(honeypotFactory.createHoneypots("fakeport", honeypotProperties));
 
         }
 
         if (honeypotProperties.isFakeCookies()) {
+            System.out.println("Creating fake cookies");
             activeHoneypots.addAll(honeypotFactory.createHoneypots("fakecookie", honeypotProperties));
 
         }
