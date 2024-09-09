@@ -42,16 +42,17 @@ public abstract class BaseOAuthClient {
         this.objectMapper = new ObjectMapper();
     }
 
-    public String buildAuthorizationUrl(String state) {
-        URIBuilder uriBuilder = null;
+    protected String buildAuthorizationUrl(String authorizationEndpoint) {
+        URIBuilder uriBuilder;
         try {
-            uriBuilder = new URIBuilder(config.getAuthorizationEndpoint());
+            uriBuilder = new URIBuilder(authorizationEndpoint);
             uriBuilder.addParameter("client_id", config.getClientId());
             uriBuilder.addParameter("redirect_uri", config.getRedirectUri());
             uriBuilder.addParameter("scope", String.join(" ", config.getScopes()));
-            uriBuilder.addParameter("state", state);
-            uriBuilder.addParameter("response_type", "code");
+            uriBuilder.addParameter("state", config.getState());
+            uriBuilder.addParameter("response_type", config.getResponseType());
         } catch (URISyntaxException e) {
+            log.error("Error building authorization URL", e);
             throw new RuntimeException(e);
         }
         log.info("Authorization URL built: {}", uriBuilder);
@@ -66,7 +67,7 @@ public abstract class BaseOAuthClient {
         params.add(new BasicNameValuePair("client_secret", config.getClientSecret()));
         params.add(new BasicNameValuePair("code", code));
         params.add(new BasicNameValuePair("redirect_uri", config.getRedirectUri()));
-        params.add(new BasicNameValuePair("grant_type", "authorization_code"));
+        params.add(new BasicNameValuePair("grant_type", config.getGrantType()));
 
         for (NameValuePair param : params) {
             log.info("Parameter for token: {} = {}", param.getName(), param.getValue());
@@ -76,9 +77,9 @@ public abstract class BaseOAuthClient {
     }
 
 
-    public UserProfile fetchUserProfile(String accessToken, String userInfoEndpoint) throws IOException {
+    protected <T extends BaseUserProfile> T fetchUserProfile(String accessToken, String userInfoEndpoint, Class<T> userProfileClass) throws IOException {
         String jsonResponse = executeGetRequest(userInfoEndpoint, accessToken);
-        return parseResponse(jsonResponse, UserProfile.class);
+        return parseResponse(jsonResponse, userProfileClass);
     }
 
 
@@ -100,23 +101,10 @@ public abstract class BaseOAuthClient {
         }
     }
 
-    protected <T> T parseResponse(String jsonResponse, Class<T> responseType) throws IOException {
+    private <T> T parseResponse(String jsonResponse, Class<T> responseType) throws IOException {
         return objectMapper.readValue(jsonResponse, responseType);
     }
 
-    public TokenResponse refreshToken(String refreshToken, String tokenEndpoint) throws IOException {
-        List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("client_id", config.getClientId()));
-        params.add(new BasicNameValuePair("client_secret", config.getClientSecret()));
-        params.add(new BasicNameValuePair("refresh_token", refreshToken));
-        params.add(new BasicNameValuePair("grant_type", "refresh_token"));
-
-        for (NameValuePair param : params) {
-            log.info("Parameter for token refresh: {} = {}", param.getName(), param.getValue());
-        }
-
-        return executePostRequest(tokenEndpoint, params);
-    }
 
     protected TokenResponse executePostRequest(String tokenEndpoint, List<NameValuePair> params) throws IOException {
         HttpPost httpPost = new HttpPost(tokenEndpoint);

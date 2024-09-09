@@ -16,5 +16,4 @@ public class GoogleOAuthProperties extends BaseOAuthProperties {
     private String tokenEndpoint = "https://oauth2.googleapis.com/token";
     private String userInfoEndpoint = "https://openidconnect.googleapis.com/v1/userinfo";
     private String jwksUrl = "https://www.googleapis.com/oauth2/v3/certs";
-    private String issuer = "https://accounts.google.com";
 }

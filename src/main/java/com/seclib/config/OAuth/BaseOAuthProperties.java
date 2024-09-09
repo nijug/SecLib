@@ -12,5 +12,6 @@ public abstract class BaseOAuthProperties {
     private String redirectUri;
     private List<String> scopes;
     private String state;
-    private String authorizationEndpoint;
+    private String responseType;
+    private String grantType;
 }
