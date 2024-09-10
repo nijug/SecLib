@@ -3,6 +3,7 @@ package com.seclib.config;
 import com.seclib.honeypot.FakeCookieHoneypot;
 import com.seclib.honeypot.HoneypotService;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -35,9 +36,8 @@ public class WebConfig implements WebMvcConfigurer {
 */
 
     @Override
-    public void addInterceptors(InterceptorRegistry registry) {
+    public void addInterceptors(@NotNull InterceptorRegistry registry) {
         if (ipBlockService instanceof HandlerInterceptor) {
-            log.info("Registering ipBlockService as HandlerInterceptor");
             registry.addInterceptor((HandlerInterceptor) ipBlockService);
         } else {
             log.warn("ipBlockService is not an instance of HandlerInterceptor");

@@ -1,6 +1,5 @@
 package com.seclib;
 
-import com.seclib.config.PasswordPolicy;
 import com.seclib.config.UserProperties;
 import com.seclib.csrf.CsrfService;
 import com.seclib.exception.LoginAttemptException;
@@ -47,7 +46,7 @@ public class UserServiceTest {
     private DefaultUser testUser;
 
     @Mock
-    private PasswordPolicy passwordPolicy;
+    private UserProperties.PasswordPolicy passwordPolicy;
 
     @Mock
     private CsrfService csrfService;

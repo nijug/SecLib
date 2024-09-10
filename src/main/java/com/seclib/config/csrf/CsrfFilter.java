@@ -5,19 +5,18 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.io.IOException;
 
+@Slf4j
 public class CsrfFilter implements Filter {
 
     private final CsrfService csrfService;
     private final CsrfFilterProperties csrfProperties;
-    private static final Logger logger = LoggerFactory.getLogger(CsrfFilter.class);
     private final RequestMappingHandlerMapping handlerMapping;
 
     public CsrfFilter(CsrfFilterProperties csrfProperties, CsrfService csrfService, RequestMappingHandlerMapping handlerMapping) {
@@ -29,56 +28,80 @@ public class CsrfFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
-            logger.info("Recognized preflight request, proceeding with filter chain");
+        log.info("Processing request for path: {}", httpRequest.getRequestURI());
+
+        if (isPreflightRequest(httpRequest)) {
+            log.info("Recognized preflight OPTIONS request, skipping CSRF check");
             chain.doFilter(request, response);
             return;
         }
 
         if (shouldBypassCsrfCheck(httpRequest)) {
+            log.info("CSRF check bypassed for this request");
             chain.doFilter(request, response);
             return;
         }
 
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
-
-
-        if ("POST".equals(httpRequest.getMethod()) || "PUT".equals(httpRequest.getMethod()) ||
-                "DELETE".equals(httpRequest.getMethod()) || "PATCH".equals(httpRequest.getMethod())) {
-
-            String requestToken = httpRequest.getHeader(csrfProperties.getHeaderName());
-
-            HttpSession session = httpRequest.getSession(false);
-
-            logger.info("CSRF token from request: {}", requestToken);
-            logger.info("CSRF token from session: {}", csrfService.getToken(session));
-
-            if (!csrfService.validateToken(session, requestToken)) {
-                logger.warn("Invalid CSRF token for session ID: {}", session.getId());
+        if (isCsrfProtectionRequired(httpRequest)) {
+            log.info("CSRF protection required for this request");
+            if (!isCsrfTokenValid(httpRequest)) {
+                log.warn("Invalid CSRF token for request");
                 httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid CSRF token");
                 return;
             }
+        }
 
-            if (csrfProperties.getRefererDomain() != null && !csrfProperties.getRefererDomain().isEmpty()) {
-                String refererHeader = httpRequest.getHeader("Referer");
-                logger.info("Referer header from request: {}", refererHeader);
-                if (refererHeader == null || !refererHeader.startsWith(csrfProperties.getRefererDomain())) {
-                    logger.warn("Invalid Referer header: {}", refererHeader);
-                    httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid Referer header");
-                    return;
-                }
+        if (isRefererCheckRequired()) {
+            log.info("Referer check required for this request");
+            if (!isRefererValid(httpRequest)) {
+                log.warn("Invalid Referer header for request");
+                httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid Referer header");
+                return;
             }
         }
 
-        if (httpRequest.getSession(false) == null) {
-            logger.info("Creating new session and generating new CSRF token");
-            HttpSession newSession = httpRequest.getSession(true);
-            String newToken = csrfService.generateToken();
-            csrfService.storeToken(newSession, newToken);
-        }
+        ensureSessionExists(httpRequest);
         chain.doFilter(request, response);
     }
+
+    private boolean isPreflightRequest(HttpServletRequest request) {
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
+    }
+
+    private boolean isCsrfProtectionRequired(HttpServletRequest request) {
+        return "POST".equals(request.getMethod()) || "PUT".equals(request.getMethod()) ||
+                "DELETE".equals(request.getMethod()) || "PATCH".equals(request.getMethod());
+    }
+
+    private boolean isCsrfTokenValid(HttpServletRequest request) {
+        String requestToken = request.getHeader(csrfProperties.getHeaderName());
+        HttpSession session = request.getSession(false);
+        return csrfService.validateToken(session, requestToken);
+    }
+
+    private boolean isRefererCheckRequired() {
+        return csrfProperties.getRefererDomain() != null && !csrfProperties.getRefererDomain().isEmpty();
+    }
+
+    private boolean isRefererValid(HttpServletRequest request) {
+        String refererHeader = request.getHeader("Referer");
+        return refererHeader != null && refererHeader.startsWith(csrfProperties.getRefererDomain());
+    }
+
+    private void ensureSessionExists(HttpServletRequest request) {
+        if (request.getSession(false) == null) {
+            log.info("No session exists, creating a new session and generating CSRF token");
+            HttpSession newSession = request.getSession(true);
+            String newToken = csrfService.generateToken();
+            csrfService.storeToken(newSession, newToken);
+            log.info("New CSRF token generated and stored in session");
+        } else {
+            log.info("Session already exists, no need to create a new one");
+        }
+    }
+
 
     private boolean shouldBypassCsrfCheck(HttpServletRequest request) {
         try {
@@ -89,14 +112,10 @@ public class CsrfFilter implements Filter {
                     CsrfBypass csrfBypassAnnotation = handlerMethod.getMethodAnnotation(CsrfBypass.class);
                     return csrfBypassAnnotation != null;
                 }
-                else {
-                    logger.info("Handler not recognized");
-                }
             }
         } catch (Exception e) {
-            logger.info("Exception occurred during CSRF check bypass", e);
+            log.error("Exception occurred during CSRF check bypass", e);
         }
         return false;
     }
-
 }

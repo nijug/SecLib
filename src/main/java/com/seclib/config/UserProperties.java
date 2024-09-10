@@ -1,20 +1,14 @@
 package com.seclib.config;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Setter // for configuration properties
-@Getter // for baseUser class
-@Component
+
+@Data
 @ConfigurationProperties(prefix = "user")
 public class UserProperties {
 
-    @Autowired
-    private PasswordPolicy passwordPolicy = new PasswordPolicy();
-    //defining default values
+    private final PasswordPolicy passwordPolicy = new PasswordPolicy();
     private boolean twoFactorAuthEnabled = true;
     private boolean ipLockingEnabled = true;
     private boolean userLockingEnabled = true;
@@ -22,16 +16,14 @@ public class UserProperties {
     private boolean passwordResetEnabled = true;
 
     private int ipMaxAttempts = 2;
-    private long ipLockTime = 1 * 60 * 1000; //1 minute
+    private long ipLockTime = 1 * 60 * 1000; // 1 minute
     private int userMaxAttempts = 2;
-    private long userLockTime = 1 * 60 * 1000;
+    private long userLockTime = 1 * 60 * 1000; // 1 minute
 
-
-    public UserProperties() {
-        passwordPolicy.setPattern("(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,}");// default value
-        // pierwszy nawias sprawdza przynajmniej jedna cyfre, drugi przynajmniej jedna mala litere, trzeci duza, czwarty znak specjalny, w klamrach calkowita minimalna dlugosc to 8
-
-        passwordPolicy.setEntropy(60);
+    @Data
+    public static class PasswordPolicy {
+        private String pattern = "(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,}";
+        private int entropy = 60;
     }
 
 }

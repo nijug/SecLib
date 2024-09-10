@@ -1,6 +1,7 @@
 package com.seclib.config;
 
 import com.seclib.honeypot.HoneypotStrategy;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Data
-@Configuration
 @Validated
 @ConfigurationProperties(prefix = "honeypot")
 public class HoneypotProperties {
@@ -30,9 +30,12 @@ public class HoneypotProperties {
 
     @Data
     public static class FakeCookieHoneypotConfig {
-        private String name;
-        private String value;
+        @NotBlank
+        private String name = "roles_info";
+        @NotBlank
+        private String value = "Z3Vlc3Q7ZXhwaXJlcz1XZWQsIDMxIERlYyAyMDI1IDIzOjU5OjU5IEdNVA==";
         private boolean httpOnly = true;
+        @NotBlank
         private String path = "/";
         private int maxAge = 24 * 60 * 60;
     }

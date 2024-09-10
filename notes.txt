@@ -5,32 +5,28 @@ Providing the following library functionality related to data security:
 - password recovery D
 - role-based access control D
 - cors config D
-- csp config D (maybe add nonces)
-- csrf -d
+- csp config D
+- csrf D
 - work monitoring (to detect potential attacks/identity theft)
-- honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint. -d
-- social login
+- honeypots list (can be extended with log analysis to detect threats). Automatic blocking of clients sending queries to a fake endpoint. D
+- social login - partially done, needs fronted integration
 - session consistency control -D
  Implement additional security measures, such as setting the HttpOnly and Secure flags on session cookies. - do it after forcing https
 
-
 Creating a simple web application to present the library's capabilities
-
 
 Secure Transmission: Use HTTPS for all traffic, not just for login pages. This ensures that user credentials are always sent over an encrypted connection.
 Audit Logging: Keep a record of all successful and failed login attempts. This can help detect and investigate suspicious activities.
 
 I`m writing Java library in Spring Boot to handle security measures without using Spring Security.
- Library will handle security concerns, while developers can focus on developing business logic.
- I`m also developing blog app in Java Spring Boot backend and React TypeScript fronted to showcase library functionality.
- I want you act as helper with implementing new functionality in library, and developing app.
- Use best practises for security, consult OWASP for reference, remember that my tech stack is Java for library and backend app, and TypeScript react for front.
- Do you understand?
+Library will handle security concerns, while developers can focus on developing business logic.
+I`m also developing blog app in Java Spring Boot backend and React TypeScript fronted to showcase library functionality.
+I want you act as helper with implementing new functionality in library, and developing app.
+Use best practises for security, consult OWASP for reference, remember that my tech stack is Java for library and backend app, and TypeScript react for front.
+Do you understand?
 
 further development:
 - option to change session storage
 - rate limiter
 - in memory blocking extended to work for multiple-instance applications
-
-zapytać o fake cookie honeypot
 

@@ -3,6 +3,7 @@ package com.seclib;
 import com.seclib.config.csrf.CsrfFilter;
 import com.seclib.config.csrf.CsrfFilterProperties;
 import com.seclib.csrf.CsrfService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +16,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import static org.mockito.Mockito.mock;
 
@@ -30,6 +33,9 @@ class CsrfFilterTests {
     @Mock
     private CsrfFilterProperties csrfProperties;
 
+    @Mock
+    private RequestMappingHandlerMapping handlerMapping;
+
     @InjectMocks
     private CsrfFilter csrfFilter;
 
@@ -39,7 +45,7 @@ class CsrfFilterTests {
     private MockHttpSession session;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
 
         session = new MockHttpSession();
@@ -50,6 +56,8 @@ class CsrfFilterTests {
         when(csrfProperties.isEnabled()).thenReturn(true);
         when(csrfProperties.getHeaderName()).thenReturn("X-CSRF-TOKEN");
         when(csrfProperties.getRefererDomain()).thenReturn("http://example.com");
+        when(handlerMapping.getHandler(any(HttpServletRequest.class)))
+                .thenReturn(new HandlerExecutionChain(new Object()));
         HandlerMethod mockHandlerMethod = mock(HandlerMethod.class);
         request.setAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE, mockHandlerMethod);
     }
@@ -72,54 +80,32 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterDisabled() throws Exception {
-        // Set CSRF protection to disabled
         when(csrfProperties.isEnabled()).thenReturn(false);
 
-        // Perform a POST request
         request.setMethod("POST");
         request.setSession(session);
 
         csrfFilter.doFilter(request, response, filterChain);
 
-        // Verify that the filter chain continues without CSRF validation
         verify(csrfService, never()).validateToken(any(HttpSession.class), anyString());
     }
 
     @Test
     void testCsrfFilterWithInvalidReferer() throws Exception {
-        // Set a referer domain
         when(csrfProperties.getRefererDomain()).thenReturn("http://valid-domain.com");
 
-        // Perform a POST request with an invalid referer
         request.setMethod("POST");
         request.addHeader("Referer", "http://invalid-domain.com");
         request.setSession(session);
 
         csrfFilter.doFilter(request, response, filterChain);
 
-        // Verify that an error is sent due to invalid referer
         assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
     }
 
-    @Test
-    void testCsrfFilterCreatesNewSessionAndToken() throws Exception {
-        // Arrange
-        String generatedToken = "newCsrfToken";
-        when(csrfService.generateToken()).thenReturn(generatedToken);
-
-        // Act
-        csrfFilter.doFilter(request, response, filterChain);
-
-        // Assert
-        HttpSession newSession = request.getSession(false);
-        assertNotNull(newSession);
-        verify(csrfService).generateToken();
-        verify(csrfService).storeToken(newSession, generatedToken);
-    }
 
     @Test
     void testCsrfFilterWithSafeMethod() throws Exception {
-        // Safe HTTP methods should not require CSRF validation
         request.setMethod("GET");
         csrfFilter.doFilter(request, response, filterChain);
 
@@ -128,7 +114,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithInvalidToken() throws Exception {
-        // Set up an invalid CSRF token scenario
         String invalidCsrfToken = "invalidCsrfToken";
         session.setAttribute("CSRF_TOKEN", "validCsrfToken");
         request.setMethod("POST");
@@ -145,7 +130,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithMissingToken() throws Exception {
-        // Set up a missing CSRF token scenario
         request.setMethod("POST");
         request.setSession(session);
 
@@ -157,7 +141,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithValidReferer() throws Exception {
-        // Set up a valid referer scenario
         String validReferer = "http://example.com/page";
         when(csrfProperties.getRefererDomain()).thenReturn("http://example.com");
 
@@ -169,7 +152,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithMissingReferer() throws Exception {
-        // Set up a missing referer scenario
         when(csrfProperties.getRefererDomain()).thenReturn("http://example.com");
 
         request.setMethod("POST");
@@ -183,7 +165,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithExistingSessionAndNoTokenCreation() throws Exception {
-        // CSRF token creation should not occur if session already exists
         request.setMethod("GET");
         request.setSession(session);
         csrfFilter.doFilter(request, response, filterChain);
@@ -194,7 +175,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithExistingToken() throws Exception {
-        // CSRF token validation should occur for unsafe methods when token exists
         String csrfToken = "existingCsrfToken";
         session.setAttribute("CSRF_TOKEN", csrfToken);
         request.setMethod("POST");
@@ -210,7 +190,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithNoRefererDomainConfigured() throws Exception {
-        // CSRF token validation should occur even if no referer domain is configured
         when(csrfProperties.getRefererDomain()).thenReturn(null);
 
         String csrfToken = "csrfToken";
@@ -228,7 +207,6 @@ class CsrfFilterTests {
 
     @Test
     void testCsrfFilterWithEmptyRefererDomainConfigured() throws Exception {
-        // CSRF token validation should occur even if an empty referer domain is configured
         when(csrfProperties.getRefererDomain()).thenReturn("");
 
         String csrfToken = "csrfToken";

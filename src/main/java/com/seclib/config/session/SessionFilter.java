@@ -26,43 +26,57 @@ public class SessionFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-        if ("OPTIONS".equalsIgnoreCase(httpRequest.getMethod())) {
-            logger.info("Recognized preflight OPTIONS request, skipping session filter");
+        if (isPreflightRequest(httpRequest)) {
             chain.doFilter(request, response);
             return;
         }
 
         HttpSession session = httpRequest.getSession(false);
 
-        String path = httpRequest.getRequestURI();
-        logger.info("Request from path:{}", path);
-
-        if (session == null || session.getAttribute("userId") == null) {
-            logger.info("Session is null or userId is not present in the session");
-            if (properties.isLoginRequired()) {
-                logger.info("Login is required");
-                if (properties.isRedirectionEnabled()) {
-                    logger.info("Redirection is enabled, redirecting to: {}", properties.getRedirectionUrl());
-                    httpResponse.sendRedirect(properties.getRedirectionUrl());
-                } else {
-                    logger.info("Redirection is not enabled, sending unauthorized error");
-                    httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                }
-            } else {
-                if (roleService.isRoleBasedAuthorizationEnabled()) {
-                    String unauthenticatedUserRoleName = properties.getRoleForUnauthenticatedUsers();
-                    if (session == null) {
-                        logger.info("Creating new session and setting role to: {}", unauthenticatedUserRoleName);
-                        session = httpRequest.getSession(true);
-                        session.setAttribute("role", unauthenticatedUserRoleName);
-                    }
-                }
-                logger.info("Proceeding with filter chain");
-                chain.doFilter(request, response);
-            }
-        } else {
-            logger.info("Session exists and userId is present in the session, proceeding with filter chain");
+        if (isUserAuthenticated(session)) {
+            logger.debug("Session exists and userId is present in the session, proceeding with filter chain");
             chain.doFilter(request, response);
+        } else {
+            handleUnauthenticatedUser(httpRequest, httpResponse, session, chain);
+        }
+    }
+
+    private boolean isPreflightRequest(HttpServletRequest request) {
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
+    }
+
+    private boolean isUserAuthenticated(HttpSession session) {
+        return session != null && session.getAttribute("userId") != null;
+    }
+
+    private void handleUnauthenticatedUser(HttpServletRequest httpRequest, HttpServletResponse httpResponse, HttpSession session, FilterChain chain) throws IOException, ServletException {
+        logger.debug("Session is null or userId is not present in the session");
+        if (properties.isLoginRequired()) {
+            redirectToLogin(httpResponse);
+        } else {
+            assignDefaultRole(httpRequest, session);
+            chain.doFilter(httpRequest, httpResponse);
+        }
+    }
+
+    private void redirectToLogin(HttpServletResponse httpResponse) throws IOException {
+        if (properties.isRedirectionEnabled()) {
+            logger.debug("Redirection is enabled, redirecting to: {}", properties.getRedirectionUrl());
+            httpResponse.sendRedirect(properties.getRedirectionUrl());
+        } else {
+            logger.debug("Redirection is not enabled, sending unauthorized error");
+            httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+        }
+    }
+
+    private void assignDefaultRole(HttpServletRequest httpRequest, HttpSession session) {
+        if (roleService.isRoleBasedAuthorizationEnabled()) {
+            String unauthenticatedUserRoleName = properties.getRoleForUnauthenticatedUsers();
+            if (session == null) {
+                logger.debug("Creating new session and setting role to: {}", unauthenticatedUserRoleName);
+                session = httpRequest.getSession(true);
+                session.setAttribute("role", unauthenticatedUserRoleName);
+            }
         }
     }
 }
