@@ -1,9 +1,12 @@
 package com.seclib.exception;
 
 
+import lombok.Getter;
+
+@Getter
 public class ApiException extends RuntimeException {
 
-    private int code;
+    private final int code;
 
     public ApiException(int code, String msg) {
         super(msg);
@@ -18,7 +21,4 @@ public class ApiException extends RuntimeException {
                 '}';
     }
 
-    public int getCode() {
-        return code;
-    }
 }

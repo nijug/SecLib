@@ -30,7 +30,7 @@ public abstract class BaseLoginAttempt {
         this.ipAddress = ipAddress;
     }
 
-    public BaseLoginAttempt(String ipAddress, int failedAttempts, long lockTime) { // constructor for testing
+    public BaseLoginAttempt(String ipAddress, int failedAttempts, long lockTime) {
         this.ipAddress = ipAddress;
         this.failedAttempts = failedAttempts;
         this.lockTime = lockTime;

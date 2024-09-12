@@ -47,7 +47,6 @@ public class FakeCookieHoneypot implements Honeypot, HandlerInterceptor {
         boolean hasFakeCookie = false;
         System.out.println("FakeCookieHoneypot preHandle");
         Cookie[] cookies = request.getCookies();
-        System.out.println("FakeCookieHoneypot preHandle cookies: " + Arrays.toString(cookies));
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (config.getName().equals(cookie.getName()) && !config.getValue().equals(cookie.getValue())) {

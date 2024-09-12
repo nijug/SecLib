@@ -2,7 +2,6 @@ package com.seclib.ipBlocking;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
@@ -48,9 +47,4 @@ public class InMemoryIpBlockService implements IpBlockService, HandlerIntercepto
         return blockedIps.containsKey(ip);
     }
 
-    @PostConstruct
-    @Transactional
-    public void loadBlockedIps() {
-        blockedIpRepository.findAll().forEach(blockedIp -> blockedIps.put(blockedIp.getIp(), Boolean.TRUE));
-    }
 }

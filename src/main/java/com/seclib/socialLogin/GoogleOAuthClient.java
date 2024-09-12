@@ -18,7 +18,6 @@ public class GoogleOAuthClient extends BaseOAuthClient {
     private final GoogleOAuthProperties googleConfig;
     private final TokenValidator tokenValidator;
 
-
     public GoogleOAuthClient(GoogleOAuthProperties config) throws URISyntaxException, IOException {
         super(config);
         this.googleConfig = config;

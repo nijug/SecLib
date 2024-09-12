@@ -1,10 +1,7 @@
 package com.seclib.config;
 
-import com.seclib.config.csrf.CsrfFilter;
-import com.seclib.config.csrf.CsrfFilterProperties;
 import com.seclib.config.session.SessionFilter;
 import com.seclib.config.session.SessionFilterProperties;
-import com.seclib.csrf.CsrfService;
 import com.seclib.userRoles.service.BaseRoleService;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;

@@ -9,9 +9,7 @@ import org.springframework.stereotype.Component;
 public class TextSanitizer {
 
     private final PolicyFactory policy;
-/* todo: html jest zapisany w bazie i przez to edycja jest tez w html, przemyśleć jak to zmienić
-może jakieś sanitizer dla markdown istnije
- */
+
     public TextSanitizer(SanitizerProperties sanitizerProperties) {
         HtmlPolicyBuilder builder = new HtmlPolicyBuilder();
 

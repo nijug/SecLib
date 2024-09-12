@@ -18,14 +18,11 @@ public class HoneypotFactory {
 
 
     public List<Honeypot> createHoneypots(String type, HoneypotProperties config) {
-        switch (type.toLowerCase()) {
-            case "fakeport":
-                return createFakePortHoneypots(config);
-            case "fakecookie":
-                return createFakeCookieHoneypots(config);
-            default:
-                throw new IllegalArgumentException("Unknown honeypot type: " + type);
-        }
+        return switch (type.toLowerCase()) {
+            case "fakeport" -> createFakePortHoneypots(config);
+            case "fakecookie" -> createFakeCookieHoneypots(config);
+            default -> throw new IllegalArgumentException("Unknown honeypot type: " + type);
+        };
     }
 
     private List<Honeypot> createFakePortHoneypots(HoneypotProperties config) {

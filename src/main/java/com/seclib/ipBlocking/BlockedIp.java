@@ -13,7 +13,7 @@ public class BlockedIp {
 
     protected BlockedIp() {}
 
-    public BlockedIp(String ip) {
+    protected BlockedIp(String ip) {
         this.ip = ip;
     }
 

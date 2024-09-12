@@ -56,36 +56,48 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
     }
 
     public DefaultUserDTO login(DefaultUserDTO userToLogin, HttpServletRequest request) throws ApiException {
-        DefaultUser userInDB = authenticateUser(userToLogin, request);
+        DefaultLoginAttempt loginAttempt = checkIpLocking(request);
+
+        DefaultUser userInDB = authenticateUser(userToLogin, loginAttempt);
         checkUserLocking(userInDB);
         handleTwoFactorAuthentication(userInDB, userToLogin, request);
-        resetFailedAttempts(userInDB);
+        resetFailedAttempts(userInDB, loginAttempt);
 
         HttpSession newSession = createNewSessionWithAttributes(request, userInDB);
-
         return createUserDTOWithCsrfToken(userInDB, newSession);
     }
 
-    private void resetFailedAttempts(DefaultUser user) {
+    private void resetFailedAttempts(DefaultUser user, DefaultLoginAttempt loginAttempt) {
         user.resetFailedAttempts();
         userRepository.save(user);
+
+        if (loginAttempt != null) {
+            loginAttempt.resetFailedAttempts();
+            loginAttemptService.saveLoginAttempt(loginAttempt);
+        }
     }
 
 
-    private DefaultUser authenticateUser(DefaultUserDTO userToLogin, HttpServletRequest request) throws UserException {
-        DefaultLoginAttempt loginAttempt = checkIpLocking(request);
-
-        DefaultUser userInDB = super.login(userToLogin);
-        if (!passwordEncoder.matches(userToLogin.getPassword(), userInDB.getPassword())) {
-            incrementFailedAttempts(userInDB);
-
-            if (loginAttempt != null) {
-                incrementFailedAttempts(loginAttempt);
-            }
-
-            throw new UserException(401, "Invalid password");
+    private DefaultUser authenticateUser(DefaultUserDTO userToLogin, DefaultLoginAttempt loginAttempt) throws UserException {
+        try {
+            return super.login(userToLogin);
+        } catch (UserException e) {
+            handleFailedLoginAttempt(userToLogin.getUsername(), loginAttempt);
+            throw e;
         }
-        return userInDB;
+    }
+
+    private void handleFailedLoginAttempt(String username, DefaultLoginAttempt loginAttempt) {
+        Optional<DefaultUser> userOpt = userRepository.findByUsername(username);
+        userOpt.ifPresent(user -> {
+            incrementFailedAttempts(user);
+            userRepository.save(user);
+        });
+
+        if (loginAttempt != null) {
+            incrementFailedAttempts(loginAttempt);
+            loginAttemptService.saveLoginAttempt(loginAttempt);
+        }
     }
 
     private DefaultLoginAttempt checkIpLocking(HttpServletRequest request) throws LoginAttemptException {
@@ -95,6 +107,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         DefaultLoginAttempt loginAttempt = loginAttemptService.getLoginAttempt(ipAddress)
                 .orElseGet(() -> loginAttemptService.createInstance(ipAddress));
 
+        System.out.println("LOGIN ATTEMPTS FROM IP " + loginAttempt.getFailedAttempts());
         if (isIpLocked(loginAttempt)) {
             throw new LoginAttemptException(403, "Logging from this IP has been locked, try again later");
         }
@@ -109,6 +122,8 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
 
     private void checkUserLocking(DefaultUser userInDB) throws UserException {
         if (!userProperties.isUserLockingEnabled()) return;
+
+        System.out.println("LOGIN ATTEMPTS FROM USER " + userInDB.getFailedAttempts());
 
         long lockTimeElapsed = System.currentTimeMillis() - userInDB.getLockTime();
         if (userInDB.getFailedAttempts() >= userProperties.getUserMaxAttempts() &&
@@ -146,26 +161,16 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         return userDTO;
     }
 
-
-    private DefaultUserDTO createUserDTO(DefaultUser userInDB, HttpSession newSession) {
-        DefaultUserDTO loggedInUser = userMapper.toDefaultUserDTO(userInDB);
-        if (csrfService != null) {
-            String csrfToken = csrfService.generateToken();
-            csrfService.storeToken(newSession, csrfToken);
-            loggedInUser.setCsrfToken(csrfToken);
-        }
-        return loggedInUser;
-    }
-
-
     private void incrementFailedAttempts(DefaultUser user) {
         int maxAttempts = userProperties.getUserMaxAttempts();
+        System.out.println("INCREMENTING USER FAILED ATTEMPTS");
         user.incrementFailedAttempts(maxAttempts);
         userRepository.save(user);
     }
 
     private void incrementFailedAttempts(DefaultLoginAttempt loginAttempt) {
         int maxAttempts = userProperties.getIpMaxAttempts();
+        System.out.println("INCREMENTING LOGIN FAILED ATTEMPTS");
         loginAttempt.incrementFailedAttempts(maxAttempts);
         loginAttemptService.saveLoginAttempt(loginAttempt);
     }
@@ -176,7 +181,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         userRepository.save(user);
     }
 
-    public String forgotPassword(String usernameFromRequest) throws PasswordResetException, InterruptedException {
+    public String forgotPassword(String usernameFromRequest) throws PasswordResetException{
         if (!userProperties.isPasswordResetEnabled()) {
             throw new PasswordResetException(403, "Password reset is disabled");
         }
@@ -188,7 +193,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
 
     public void resetPassword(String token, String newPassword) throws ApiException {
         DefaultPasswordResetToken resetToken = passwordResetTokenService.getPasswordResetToken(token)
-                .orElseThrow(() -> new ApiException(403, "Invalid password reset token"));
+                .orElseThrow(() -> new TwoFAuthException(403, "Invalid password reset token"));
         DefaultUser user = resetToken.getUser();
         validatePassword(newPassword);
         user.setPassword(passwordEncoder.encode(newPassword));
