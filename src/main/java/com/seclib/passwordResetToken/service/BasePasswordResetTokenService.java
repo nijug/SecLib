@@ -1,27 +1,23 @@
 package com.seclib.passwordResetToken.service;
 
 import com.seclib.passwordResetToken.model.BasePasswordResetToken;
-import com.seclib.passwordResetToken.repository.*;
+import com.seclib.passwordResetToken.repository.BasePasswordResetTokenRepository;
 import com.seclib.user.model.BaseUser;
-import org.springframework.stereotype.Service;
-
-import java.util.Calendar;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
+public abstract class BasePasswordResetTokenService<U extends BaseUser, T extends BasePasswordResetToken<U>, R extends BasePasswordResetTokenRepository<T, U, Long>> {
 
-public abstract class BasePasswordResetTokenService<U extends BaseUser, T extends BasePasswordResetToken<U> ,R extends BasePasswordResetTokenRepository<T, U, Long>> {
-
-    protected R passwordResetTokenRepository;
+    protected final R passwordResetTokenRepository;
 
     public BasePasswordResetTokenService(R passwordResetTokenRepository) {
         this.passwordResetTokenRepository = passwordResetTokenRepository;
     }
 
     public T createPasswordResetToken(U user) {
-        T existingToken = passwordResetTokenRepository.findByUser(user);
-        if (existingToken != null) {
-            passwordResetTokenRepository.delete(existingToken);
-        }
+        Optional<T> existingToken = passwordResetTokenRepository.findByUser(user);
+        existingToken.ifPresent(passwordResetTokenRepository::delete);
         T token = createInstance();
         token.setUser(user);
         token.setToken(UUID.randomUUID().toString());
@@ -29,7 +25,7 @@ public abstract class BasePasswordResetTokenService<U extends BaseUser, T extend
         return passwordResetTokenRepository.save(token);
     }
 
-    public T getPasswordResetToken(String token) {
+    public Optional<T> getPasswordResetToken(String token) {
         return passwordResetTokenRepository.findByToken(token);
     }
 
@@ -39,9 +35,7 @@ public abstract class BasePasswordResetTokenService<U extends BaseUser, T extend
 
     protected abstract T createInstance();
 
-    private java.sql.Date calculateExpiryDate(int expiryTimeInMinutes) {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.MINUTE, expiryTimeInMinutes);
-        return new java.sql.Date(cal.getTime().getTime());
+    private Instant calculateExpiryDate(int expiryTimeInMinutes) {
+        return Instant.now().plusSeconds(expiryTimeInMinutes * 60L);
     }
 }

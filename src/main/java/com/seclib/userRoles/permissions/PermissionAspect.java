@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 
 @Aspect
@@ -34,7 +35,7 @@ public class PermissionAspect {
 
     @Before("@annotation(RequiredPermissions)")
     public void checkPermission(JoinPoint joinPoint) throws NoSuchMethodException {
-        logger.info("Checking permissions for method: " + joinPoint.getSignature());
+        logger.info("Checking permissions for method: {}", joinPoint.getSignature());
 
         HttpSession session = null;
         for (Object arg : joinPoint.getArgs()) {
@@ -53,16 +54,16 @@ public class PermissionAspect {
         String role;
         if (userId == null) {
             role = (String) session.getAttribute("role");
-            logger.info("Role from session: " + role); // Log the role from the session
+            logger.info("Role from session: {}", role); // Log the role from the session
         } else {
-            DefaultUser user = userService.findById(userId);
-            if (user == null) {
+            Optional<DefaultUser> user = userService.findById(userId);
+            if (user.isEmpty()) {
                 logger.error("User not found");
                 throw new SecurityException("User not found");
             }
-            role = user.getRole();
+            role = user.get().getRole();
         }
-        logger.info("Role names defined in the application properties: " + authorizationProperties.getRoles().keySet());
+        logger.info("Role names defined in the application properties: {}", authorizationProperties.getRoles().keySet());
 
         AuthorizationProperties.RoleProperties roleProperties = authorizationProperties.getRoles().get(role);
         if (roleProperties == null) {
@@ -70,7 +71,7 @@ public class PermissionAspect {
             throw new SecurityException("User does not have required permissions");
         }
 
-        logger.info("Permissions for role " + role + ": " + roleProperties.getPermissions());
+        logger.info("Permissions for role {}: {}", role, roleProperties.getPermissions());
 
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();

@@ -9,7 +9,7 @@ public class DefaultLoginAttempt extends BaseLoginAttempt {
         super(ipAddress);
     }
 
-    public DefaultLoginAttempt(String ipAddress, int failedAttempts, long lockTime) { // constructor for testing
+    public DefaultLoginAttempt(String ipAddress, int failedAttempts, long lockTime) {
         super(ipAddress, failedAttempts, lockTime);
     }
 

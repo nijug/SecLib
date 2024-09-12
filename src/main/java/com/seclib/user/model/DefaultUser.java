@@ -2,12 +2,11 @@ package com.seclib.user.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
-
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 @Entity
 public class DefaultUser extends BaseUser {
 
@@ -23,9 +22,6 @@ public class DefaultUser extends BaseUser {
     @Column(name = "role")
     private String role;
 
-    protected DefaultUser() {
-    }
-
     public DefaultUser(String username, String password) {
         super(username, password);
     }
@@ -34,7 +30,10 @@ public class DefaultUser extends BaseUser {
         this.failedAttempts = 0;
     }
 
-    public void incrementFailedAttempts() {
+    public void incrementFailedAttempts(int maxAttempts) {
         this.failedAttempts++;
+        if (this.failedAttempts >= maxAttempts) {
+            this.lockTime = System.currentTimeMillis();
+        }
     }
 }

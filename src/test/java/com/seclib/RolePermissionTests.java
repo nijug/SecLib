@@ -59,9 +59,9 @@ class RolePermissionTests {
         user.setRole("admin");
 
         when(session.getAttribute("userId")).thenReturn(1L);
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findById(1L)).thenReturn(Optional.of(user));
         when(joinPoint.getSignature()).thenReturn(methodSignature);
-        when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
+        when(joinPoint.getArgs()).thenReturn(new Object[] { session });
         when(methodSignature.getMethod()).thenReturn(TestClass.class.getMethod("methodWithRequiredPermissions", HttpSession.class));
 
         assertDoesNotThrow(() -> permissionAspect.checkPermission(joinPoint));
@@ -74,7 +74,7 @@ class RolePermissionTests {
         user.setRole("user"); // The "user" role does not have the "READ" permission
 
         when(session.getAttribute("userId")).thenReturn(1L);
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findById(1L)).thenReturn(Optional.of(user));
         when(joinPoint.getSignature()).thenReturn(methodSignature);
         when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
         when(methodSignature.getMethod()).thenReturn(TestClass.class.getMethod("methodWithRequiredPermissions", HttpSession.class));
@@ -85,9 +85,9 @@ class RolePermissionTests {
     @Test
     void testCheckPermissionWithUserNotFound() {
         when(session.getAttribute("userId")).thenReturn(1L);
-        when(userService.findById(1L)).thenReturn(null);
+        when(userService.findById(1L)).thenReturn(Optional.empty());
         when(joinPoint.getSignature()).thenReturn(methodSignature);
-        when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
+        when(joinPoint.getArgs()).thenReturn(new Object[] { session });
 
         assertThrows(SecurityException.class, () -> permissionAspect.checkPermission(joinPoint));
     }
@@ -107,7 +107,7 @@ class RolePermissionTests {
         user.setRole("admin");
 
         when(session.getAttribute("userId")).thenReturn(1L);
-        when(userService.findById(1L)).thenReturn(user);
+        when(userService.findById(1L)).thenReturn(Optional.of(user));
         when(joinPoint.getSignature()).thenReturn(methodSignature);
         when(joinPoint.getArgs()).thenReturn(new Object[] { session }); // Make sure the session is included in the joinPoint arguments
         when(methodSignature.getMethod()).thenReturn(TestClass.class.getMethod("methodWithoutRequiredPermissions", HttpSession.class));

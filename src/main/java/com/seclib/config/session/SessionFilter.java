@@ -5,16 +5,18 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
+
+@Slf4j
 public class SessionFilter implements Filter {
 
     private final SessionFilterProperties properties;
     private final BaseRoleService<?, ?> roleService;
-    private static final Logger logger = LoggerFactory.getLogger(SessionFilter.class);
 
     public SessionFilter(SessionFilterProperties properties, BaseRoleService<?, ?> roleService) {
         this.properties = properties;
@@ -34,7 +36,7 @@ public class SessionFilter implements Filter {
         HttpSession session = httpRequest.getSession(false);
 
         if (isUserAuthenticated(session)) {
-            logger.debug("Session exists and userId is present in the session, proceeding with filter chain");
+            log.debug("Session exists and userId is present in the session, proceeding with filter chain");
             chain.doFilter(request, response);
         } else {
             handleUnauthenticatedUser(httpRequest, httpResponse, session, chain);
@@ -50,7 +52,7 @@ public class SessionFilter implements Filter {
     }
 
     private void handleUnauthenticatedUser(HttpServletRequest httpRequest, HttpServletResponse httpResponse, HttpSession session, FilterChain chain) throws IOException, ServletException {
-        logger.debug("Session is null or userId is not present in the session");
+        log.info("Session is null or userId is not present in the session");
         if (properties.isLoginRequired()) {
             redirectToLogin(httpResponse);
         } else {
@@ -61,10 +63,10 @@ public class SessionFilter implements Filter {
 
     private void redirectToLogin(HttpServletResponse httpResponse) throws IOException {
         if (properties.isRedirectionEnabled()) {
-            logger.debug("Redirection is enabled, redirecting to: {}", properties.getRedirectionUrl());
+            log.info("Redirection is enabled, redirecting to: {}", properties.getRedirectionUrl());
             httpResponse.sendRedirect(properties.getRedirectionUrl());
         } else {
-            logger.debug("Redirection is not enabled, sending unauthorized error");
+            log.info("Redirection is not enabled, sending unauthorized error");
             httpResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
         }
     }
@@ -73,7 +75,7 @@ public class SessionFilter implements Filter {
         if (roleService.isRoleBasedAuthorizationEnabled()) {
             String unauthenticatedUserRoleName = properties.getRoleForUnauthenticatedUsers();
             if (session == null) {
-                logger.debug("Creating new session and setting role to: {}", unauthenticatedUserRoleName);
+                log.info("Creating new session and setting role to: {}", unauthenticatedUserRoleName);
                 session = httpRequest.getSession(true);
                 session.setAttribute("role", unauthenticatedUserRoleName);
             }

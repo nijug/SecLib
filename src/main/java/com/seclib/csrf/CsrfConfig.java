@@ -34,6 +34,7 @@ public class CsrfConfig {
         registrationBean.setFilter(new CsrfFilter(csrfFilterProperties, csrfService, handlerMapping));
         registrationBean.addUrlPatterns("/*");
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE);
+
         return registrationBean;
     }
 }

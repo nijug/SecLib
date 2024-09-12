@@ -6,11 +6,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 @NoRepositoryBean
 public interface BasePasswordResetTokenRepository<T extends BasePasswordResetToken<U>, U extends BaseUser, ID extends Serializable> extends JpaRepository<T, ID> {
 
-    T findByUser(U user);
-    T findByToken(String token);
+    Optional<T> findByUser(U user);
+    Optional<T> findByToken(String token);
 
 }

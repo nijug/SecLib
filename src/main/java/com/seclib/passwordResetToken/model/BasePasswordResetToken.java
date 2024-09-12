@@ -1,4 +1,3 @@
-// BasePasswordResetToken.java
 package com.seclib.passwordResetToken.model;
 
 import jakarta.persistence.*;
@@ -7,6 +6,7 @@ import lombok.Setter;
 import com.seclib.user.model.BaseUser;
 
 import java.sql.Date;
+import java.time.Instant;
 
 @MappedSuperclass
 public abstract class BasePasswordResetToken<T extends BaseUser> {
@@ -27,7 +27,7 @@ public abstract class BasePasswordResetToken<T extends BaseUser> {
 
     @Getter
     @Setter
-    private Date expiryDate;
+    private Instant expiryDate;
 
     @Getter
     private static final int EXPIRATION = 5;

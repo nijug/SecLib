@@ -1,7 +1,6 @@
 package com.seclib;
 
 import com.seclib.config.UserProperties;
-import com.seclib.csrf.CsrfService;
 import com.seclib.exception.LoginAttemptException;
 import com.seclib.exception.UserException;
 import com.seclib.loginAttempt.model.DefaultLoginAttempt;
@@ -13,13 +12,11 @@ import com.seclib.user.mapper.DefaultUserMapper;
 import com.seclib.user.model.DefaultUser;
 import com.seclib.user.repository.DefaultUserRepository;
 import com.seclib.user.service.DefaultUserService;
-import jakarta.validation.Validator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
@@ -38,7 +35,7 @@ public class UserServiceTest {
     private DefaultUserRepository defaultUserRepository;
 
     @Mock
-    private Validator validator;
+    private Argon2PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private DefaultUserService userService;
@@ -49,9 +46,6 @@ public class UserServiceTest {
     private UserProperties.PasswordPolicy passwordPolicy;
 
     @Mock
-    private CsrfService csrfService;
-
-    @Mock
     private DefaultPasswordResetTokenService passwordResetTokenService;
 
     @Mock
@@ -59,18 +53,23 @@ public class UserServiceTest {
 
     private MockHttpServletRequest request;
 
-    @Mock
-    private Argon2PasswordEncoder passwordEncoder;
 
     private final DefaultUserMapper defaultUserMapper = Mappers.getMapper(DefaultUserMapper.class);
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        userService.setValidator(validator);
         userService.setUserMapper(defaultUserMapper);
 
         when(userProperties.getPasswordPolicy()).thenReturn(passwordPolicy);
+
+
+        Argon2PasswordEncoder realEncoder = new Argon2PasswordEncoder(16, 32, 1, 7168, 5);
+        when(passwordEncoder.encode(anyString())).thenAnswer(invocation -> {
+            String password = invocation.getArgument(0);
+            return realEncoder.encode(password);
+        });
+
         when(passwordPolicy.getPattern()).thenReturn(".*[A-Z].*");
         when(loginAttemptService.getLoginAttempt(anyString())).thenReturn(null);
         when(loginAttemptService.createInstance(anyString())).thenReturn(new DefaultLoginAttempt("127.0.0.1"));
@@ -78,23 +77,24 @@ public class UserServiceTest {
         when(userProperties.getIpLockTime()).thenReturn(1 * 60 * 1000L);
         when(userProperties.getUserMaxAttempts()).thenReturn(3);
         when(userProperties.getUserLockTime()).thenReturn(1 * 60 * 1000L);
-        when(passwordEncoder.matches(Mockito.anyString(), Mockito.anyString())).thenAnswer(invocation -> {
-            String arg0 = invocation.getArgument(0);
-            String arg1 = invocation.getArgument(1);
-            return arg0.equals(arg1);
+        when(passwordEncoder.matches(anyString(), anyString())).thenAnswer(invocation -> {
+            String rawPassword = invocation.getArgument(0);
+            String encodedPassword = invocation.getArgument(1);
+            return realEncoder.matches(rawPassword, encodedPassword);
         });
         request = new MockHttpServletRequest();
         request.setRemoteAddr("127.0.0.1");
 
         try {
-            testUser = userService.register("testUser", "Password123!");
+            DefaultUserDTO testUserDTO = userService.register(UserDtoMother.createValidDTO(), Optional.empty());
+            testUser = defaultUserMapper.fromDefaultUserDTO(testUserDTO);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
     @Test
-    public void testLoginWithAccountLockingDisabledAndExistingUser() throws InterruptedException {
+    public void testLoginWithAccountLockingDisabledAndExistingUser() {
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         DefaultUserDTO loggedInUser = userService.login(UserDtoMother.createValidDTO(), request);
@@ -116,8 +116,10 @@ public class UserServiceTest {
     }
 
     @Test
-    public void testLoginWithIpLockingEnabledAndCorrectPassword() throws InterruptedException {
+    public void testLoginWithIpLockingEnabledAndCorrectPassword() {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 0, System.currentTimeMillis())));
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         DefaultUserDTO loggedInUser = userService.login(UserDtoMother.createValidDTO(), request);
         assertEquals(testUser.getId(), loggedInUser.getId());
@@ -127,6 +129,8 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledAndIncorrectPassword() {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 0, System.currentTimeMillis())));
         assertThrows(UserException.class, () -> userService.login(UserDtoMother.createWrongPasswordDTO(), request));
     }
 
@@ -136,7 +140,8 @@ public class UserServiceTest {
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(userProperties.getIpLockTime()).thenReturn(6000L);
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
-        when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000)));
         assertThrows(LoginAttemptException.class, () -> userService.login(UserDtoMother.createValidDTO(), request));
     }
 
@@ -145,7 +150,8 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
 
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
-        when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000)));
         assertThrows(LoginAttemptException.class, () -> userService.login(UserDtoMother.createWrongPasswordDTO(), request));
     }
 
@@ -154,9 +160,9 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
 
-        DefaultLoginAttempt firstAttempt = new DefaultLoginAttempt("127.0.0.1", 1, System.currentTimeMillis());
-        DefaultLoginAttempt secondAttempt = new DefaultLoginAttempt("127.0.0.1", 2, System.currentTimeMillis());
-        DefaultLoginAttempt thirdAttempt = new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis());
+        Optional<DefaultLoginAttempt> firstAttempt = Optional.of(new DefaultLoginAttempt("127.0.0.1", 1, System.currentTimeMillis()));
+        Optional<DefaultLoginAttempt> secondAttempt = Optional.of(new DefaultLoginAttempt("127.0.0.1", 2, System.currentTimeMillis()));
+        Optional<DefaultLoginAttempt> thirdAttempt = Optional.of(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
 
         when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(firstAttempt, secondAttempt, thirdAttempt);
 
@@ -169,14 +175,18 @@ public class UserServiceTest {
     public void testLoginWithIpLockingEnabledAndNonExistingUser() {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser2")).thenReturn(Optional.empty());
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 0, System.currentTimeMillis() - 3000)));
+
         assertThrows(UserException.class, () -> userService.login(UserDtoMother.createNonExistentDTO(), request));
     }
 
     @Test
-    public void testLoginWithIpLockingDisabledAndBlockedIp() throws InterruptedException {
+    public void testLoginWithIpLockingDisabledAndBlockedIp() {
         when(userProperties.isIpLockingEnabled()).thenReturn(false);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
-        when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000)));
         DefaultUserDTO loggedInUser = userService.login(UserDtoMother.createValidDTO(), request);
         assertEquals(testUser.getId(), loggedInUser.getId());
     }
@@ -187,7 +197,8 @@ public class UserServiceTest {
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(userProperties.getIpLockTime()).thenReturn(5000L);
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
-        when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis() - 3000)));
         assertThrows(LoginAttemptException.class, () -> userService.login(UserDtoMother.createValidDTO(), request));
     }
 
@@ -196,7 +207,8 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
-        when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 5, System.currentTimeMillis() - 3000)));
         assertThrows(LoginAttemptException.class, () -> userService.login(UserDtoMother.createWrongPasswordDTO(), request));
     }
 
@@ -206,7 +218,8 @@ public class UserServiceTest {
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(userProperties.getIpLockTime()).thenReturn(5000L);
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
-        when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis())));
         assertThrows(LoginAttemptException.class, () -> userService.login(UserDtoMother.createValidDTO(), request));
     }
 
@@ -215,12 +228,13 @@ public class UserServiceTest {
         when(userProperties.isIpLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         when(userProperties.getIpMaxAttempts()).thenReturn(3);
-        when(loginAttemptService.getLoginAttempt("127.0.0.1")).thenReturn(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis()));
+        when(loginAttemptService.getLoginAttempt("127.0.0.1"))
+                .thenReturn(Optional.of(new DefaultLoginAttempt("127.0.0.1", 3, System.currentTimeMillis())));
         assertThrows(LoginAttemptException.class, () -> userService.login(UserDtoMother.createWrongPasswordDTO(), request));
     }
 
     @Test
-    public void testLoginWithUserLockingEnabledAndCorrectPassword() throws InterruptedException {
+    public void testLoginWithUserLockingEnabledAndCorrectPassword() {
         when(userProperties.isUserLockingEnabled()).thenReturn(true);
         when(defaultUserRepository.findByUsername("testUser")).thenReturn(Optional.of(testUser));
         DefaultUserDTO loggedInUser = userService.login(UserDtoMother.createValidDTO(), request);
@@ -318,7 +332,7 @@ public class UserServiceTest {
 
         when(defaultUserRepository.findByUsername(testUser.getUsername())).thenReturn(Optional.of(testUser));
         when(passwordResetTokenService.createPasswordResetToken(testUser)).thenReturn(resetToken);
-        when(passwordResetTokenService.getPasswordResetToken(resetToken.getToken())).thenReturn(resetToken);
+        when(passwordResetTokenService.getPasswordResetToken(resetToken.getToken())).thenReturn(Optional.of(resetToken));
 
         String token = userService.forgotPassword(testUser.getUsername());
         userService.resetPassword(token, newPassword);
@@ -326,8 +340,7 @@ public class UserServiceTest {
         DefaultUser updatedUser = defaultUserRepository.findByUsername(testUser.getUsername()).orElse(null);
         assertNotNull(updatedUser);
 
-        Argon2PasswordEncoder encoder = new Argon2PasswordEncoder(16, 32, 1, 7168, 5);
-        assertTrue(encoder.matches(newPassword, updatedUser.getPassword()));
+        assertTrue(passwordEncoder.matches(newPassword, updatedUser.getPassword()));
     }
 
 }

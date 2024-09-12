@@ -3,17 +3,18 @@ package com.seclib.loginAttempt.service;
 import com.seclib.loginAttempt.model.BaseLoginAttempt;
 import com.seclib.loginAttempt.repository.BaseLoginAttemptRepository;
 
+import java.util.Optional;
+
 public abstract class BaseLoginAttemptService<T extends BaseLoginAttempt, R extends BaseLoginAttemptRepository<T, Long>> {
 
+    protected final R loginAttemptRepository;
 
-    protected R loginAttemptRepository;
-
-    BaseLoginAttemptService(R loginAttemptRepository) {
+    protected BaseLoginAttemptService(R loginAttemptRepository) {
         this.loginAttemptRepository = loginAttemptRepository;
     }
 
-    public T getLoginAttempt(String ipAddress) {
-        return loginAttemptRepository.findByIpAddress(ipAddress).orElse(null);
+    public Optional<T> getLoginAttempt(String ipAddress) {
+        return loginAttemptRepository.findByIpAddress(ipAddress);
     }
 
     public void saveLoginAttempt(T loginAttempt) {
@@ -21,11 +22,9 @@ public abstract class BaseLoginAttemptService<T extends BaseLoginAttempt, R exte
     }
 
     public void resetFailedAttempts(T loginAttempt) {
-        loginAttempt.setFailedAttempts(0);
+        loginAttempt.resetFailedAttempts();
         loginAttemptRepository.save(loginAttempt);
     }
 
     public abstract T createInstance(String ipAddress);
-
-
 }

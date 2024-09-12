@@ -39,5 +39,14 @@ public abstract class BaseLoginAttempt {
     protected BaseLoginAttempt() {
     }
 
+    public void resetFailedAttempts() {
+        this.failedAttempts = 0;
+    }
 
+    public void incrementFailedAttempts(int maxAttempts) {
+        this.failedAttempts++;
+        if (this.failedAttempts >= maxAttempts) {
+            this.lockTime = System.currentTimeMillis();
+        }
+    }
 }

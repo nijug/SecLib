@@ -6,6 +6,8 @@ import com.seclib.user.service.DefaultUserService;
 import com.seclib.userRoles.model.DefaultRole;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 
 @Service
 public class DefaultRoleService extends BaseRoleService<DefaultRole, DefaultUserService> {
@@ -15,8 +17,8 @@ public class DefaultRoleService extends BaseRoleService<DefaultRole, DefaultUser
     }
 
     public String getUserRole(String username) {
-        DefaultUser user = userService.findByUsername(username);
-        return user != null ? user.getRole() : null;
+        Optional<DefaultUser> user = userService.findByUsername(username);
+        return user.map(DefaultUser::getRole).orElse(null);
     }
     public boolean userHasRole(String username, String role) {
         String userRole = getUserRole(username);

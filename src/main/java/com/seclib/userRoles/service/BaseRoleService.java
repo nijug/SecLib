@@ -7,7 +7,6 @@ import com.seclib.user.repository.BaseUserRepository;
 import com.seclib.user.service.BaseUserService;
 import com.seclib.userRoles.model.BaseRole;
 
-
 public abstract class BaseRoleService<T extends BaseRole, U extends BaseUserService<? extends BaseUser, ? extends BaseUserRepository<?, Long>, ? extends BaseUserDTO>> {
 
     private final AuthorizationProperties authorizationProperties;
@@ -21,7 +20,5 @@ public abstract class BaseRoleService<T extends BaseRole, U extends BaseUserServ
     public boolean isRoleBasedAuthorizationEnabled() {
         return authorizationProperties.isRoleBasedAuthorizationEnabled();
     }
-
-
 
 }
