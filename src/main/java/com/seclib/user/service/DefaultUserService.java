@@ -60,7 +60,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
 
         DefaultUser userInDB = authenticateUser(userToLogin, loginAttempt);
         checkUserLocking(userInDB);
-        handleTwoFactorAuthentication(userInDB, userToLogin, request);
+        handleTwoFactorAuthentication(userInDB, userToLogin, request, loginAttempt);
         resetFailedAttempts(userInDB, loginAttempt);
 
         HttpSession newSession = createNewSessionWithAttributes(request, userInDB);
@@ -132,11 +132,12 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         }
     }
 
-    private void handleTwoFactorAuthentication(DefaultUser userInDB, DefaultUserDTO userToLogin, HttpServletRequest request) throws TotpException {
+    private void handleTwoFactorAuthentication(DefaultUser userInDB, DefaultUserDTO userToLogin, HttpServletRequest request, DefaultLoginAttempt loginAttempt) throws TotpException {
         if (!userProperties.isTwoFactorAuthEnabled() || userInDB.getTotpSecret() == null) return;
 
         HttpSession oldSession = request.getSession(false);
         if (!totpService.validateTotp(userInDB.getTotpSecret(), userToLogin.getTotpSecret(), oldSession)) {
+            handleFailedLoginAttempt(userToLogin.getUsername(), loginAttempt);
             throw new TotpException(401, "Invalid TOTP");
         }
     }
@@ -181,7 +182,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
         userRepository.save(user);
     }
 
-    public String forgotPassword(String usernameFromRequest) throws PasswordResetException{
+    public String forgotPassword(String usernameFromRequest) throws PasswordResetException {
         if (!userProperties.isPasswordResetEnabled()) {
             throw new PasswordResetException(403, "Password reset is disabled");
         }
@@ -213,6 +214,5 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
     protected DefaultUser createNewUser(String username, String password) {
         return new DefaultUser(username, password);
     }
-
 
 }
