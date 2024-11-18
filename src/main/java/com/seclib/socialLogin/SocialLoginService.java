@@ -6,7 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface SocialLoginService {
     BaseUserDTO loginViaSocial(BaseUserProfile userProfile, HttpServletRequest request);
-    BaseUser findByUsername(String username);
+    BaseUserDTO findByUsername(String username);
     BaseUser findById(Long id);
 
 }

@@ -35,10 +35,21 @@ public class DefaultSocialLoginService implements SocialLoginService {
             user = new SocialLoginUser(userProfile.getUsername(), userProfile.getProvider(), userProfile.getProviderId(), userProfile.getEmail());
             userRepository.save(user);
         }
-        user.setRole();
         HttpSession newSession = createNewSessionWithAttributes(request, user);
         return createUserDTOWithCsrfToken(user, newSession);
     }
+
+    public SocialLoginUserDTO loginViaSocial(BaseUserProfile userProfile, Optional<String> role, HttpServletRequest request) {
+        SocialLoginUser user = userRepository.findByProviderAndProviderId(userProfile.getProvider(), userProfile.getProviderId()).orElse(null);
+        if (user == null) {
+            user = new SocialLoginUser(userProfile.getUsername(), userProfile.getProvider(), userProfile.getProviderId(), userProfile.getEmail());
+            user.setRole(role.get());
+            userRepository.save(user);
+        }
+        HttpSession newSession = createNewSessionWithAttributes(request, user);
+        return createUserDTOWithCsrfToken(user, newSession);
+    }
+
 
     private HttpSession createNewSessionWithAttributes(HttpServletRequest request, SocialLoginUser user) {
         HttpSession oldSession = request.getSession(false);
@@ -62,12 +73,12 @@ public class DefaultSocialLoginService implements SocialLoginService {
     }
 
     @Override
-    public SocialLoginUser findByUsername(String username) {
-        return userRepository.findByUsername(username).orElse(null);
+    public SocialLoginUserDTO findByUsername(String username) {
+        return  userMapper.toSocialLoginUserDTO(userRepository.findByUsername(username).orElse(null));
     }
 
     @Override
-    public SocialLoginUser  findById(Long id) {
+    public SocialLoginUser findById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
 }

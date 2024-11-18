@@ -9,7 +9,6 @@ import org.mapstruct.Mapping;
 public interface SocialLoginUserMapper {
     @Mapping(target = "csrfToken", ignore = true)
     @Mapping(target = "sessionId", ignore = true)
-
     SocialLoginUserDTO toSocialLoginUserDTO(SocialLoginUser user);
 
     SocialLoginUser fromSocialLoginUserDTO(SocialLoginUserDTO dto);
