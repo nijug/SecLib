@@ -159,6 +159,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
             csrfService.storeToken(session, csrfToken);
             userDTO.setCsrfToken(csrfToken);
         }
+        userDTO.setSessionId(session.getId());
         return userDTO;
     }
 

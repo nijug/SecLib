@@ -10,10 +10,12 @@ import org.mapstruct.Mapping;
 public interface DefaultUserMapper{
     @Mapping(target = "totpSecret", source = "totpSecret")
     @Mapping(target = "csrfToken", ignore = true)
+    @Mapping(target = "sessionId", ignore = true)
     DefaultUserDTO toDefaultUserDTO(DefaultUser user);
 
     @InheritInverseConfiguration
     @Mapping(target = "failedAttempts", ignore = true)
     @Mapping(target = "lockTime", ignore = true)
+    @Mapping(target = "email", source = "email")
     DefaultUser fromDefaultUserDTO(DefaultUserDTO dto);
 }

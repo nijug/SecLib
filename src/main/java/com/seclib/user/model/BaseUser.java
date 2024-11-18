@@ -16,7 +16,6 @@ public abstract class BaseUser {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @NotNull(message = "Password cannot be null")
     private String password;
 
     @NotNull(message = "Username cannot be null")

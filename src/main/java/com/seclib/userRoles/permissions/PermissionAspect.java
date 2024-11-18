@@ -1,8 +1,9 @@
 package com.seclib.userRoles.permissions;
 
 import com.seclib.config.AuthorizationProperties;
-
+import com.seclib.socialLogin.DefaultSocialLoginService;
 import com.seclib.user.model.DefaultUser;
+import com.seclib.user.model.SocialLoginUser;
 import com.seclib.user.service.DefaultUserService;
 import jakarta.servlet.http.HttpSession;
 import org.aspectj.lang.JoinPoint;
@@ -12,25 +13,23 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
 import java.lang.reflect.Method;
 import java.util.Optional;
-
 
 @Aspect
 @Component
 public class PermissionAspect {
 
-
     private final AuthorizationProperties authorizationProperties;
-
     private final DefaultUserService userService;
-
+    private final DefaultSocialLoginService socialLoginUserService;
     private static final Logger logger = LoggerFactory.getLogger(PermissionAspect.class);
 
-
-    public PermissionAspect(AuthorizationProperties authorizationProperties, DefaultUserService userService) {
+    public PermissionAspect(AuthorizationProperties authorizationProperties, DefaultUserService userService, DefaultSocialLoginService socialLoginUserService) {
         this.authorizationProperties = authorizationProperties;
         this.userService = userService;
+        this.socialLoginUserService = socialLoginUserService;
     }
 
     @Before("@annotation(RequiredPermissions)")
@@ -54,15 +53,23 @@ public class PermissionAspect {
         String role;
         if (userId == null) {
             role = (String) session.getAttribute("role");
-            logger.info("Role from session: {}", role); // Log the role from the session
+            logger.info("Role from session: {}", role);
         } else {
-            Optional<DefaultUser> user = userService.findById(userId);
-            if (user.isEmpty()) {
+            Optional<DefaultUser> defaultUser = userService.findById(userId);
+            Optional<SocialLoginUser> socialLoginUser = Optional.ofNullable(socialLoginUserService.findById(userId));
+
+            if (defaultUser.isEmpty() && socialLoginUser.isEmpty()) {
                 logger.error("User not found");
                 throw new SecurityException("User not found");
             }
-            role = user.get().getRole();
+
+            if (defaultUser.isPresent()) {
+                role = defaultUser.get().getRole();
+            } else {
+                role = socialLoginUser.get().getRole();
+            }
         }
+
         logger.info("Role names defined in the application properties: {}", authorizationProperties.getRoles().keySet());
 
         AuthorizationProperties.RoleProperties roleProperties = authorizationProperties.getRoles().get(role);

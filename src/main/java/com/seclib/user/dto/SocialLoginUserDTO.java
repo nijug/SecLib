@@ -1,17 +1,13 @@
 package com.seclib.user.dto;
 
-
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
-public class DefaultUserDTO extends BaseUserDTO {
-
-    private String totpSecret;
+public class SocialLoginUserDTO extends BaseUserDTO {
     private String role;
+    private String sessionId;
     private String csrfToken;
     private String email;
-    private String sessionId;
-
 }

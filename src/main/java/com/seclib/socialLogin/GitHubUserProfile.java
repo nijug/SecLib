@@ -1,7 +1,6 @@
 package com.seclib.socialLogin;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -9,6 +8,21 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GitHubUserProfile extends BaseUserProfile {
-    private String Id;
+    private String id;
     private String login;
+
+    @Override
+    public String getProvider() {
+        return "github";
+    }
+
+    @Override
+    public String getProviderId() {
+        return id;
+    }
+
+    @Override
+    public String getUsername() {
+        return login;
+    }
 }

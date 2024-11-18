@@ -22,6 +22,9 @@ public class DefaultUser extends BaseUser {
     @Column(name = "role")
     private String role;
 
+    @Column(name = "email")
+    private String email;
+
     public DefaultUser(String username, String password) {
         super(username, password);
     }

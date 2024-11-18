@@ -1,6 +1,7 @@
 package com.seclib;
 
 import com.seclib.config.AuthorizationProperties;
+import com.seclib.socialLogin.DefaultSocialLoginService;
 import com.seclib.userRoles.permissions.PermissionAspect;
 import com.seclib.userRoles.permissions.RequiredPermissions;
 import com.seclib.user.model.DefaultUser;
@@ -29,6 +30,9 @@ class RolePermissionTests {
     private DefaultUserService userService;
 
     @Mock
+    private DefaultSocialLoginService socialLoginUserService;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -42,7 +46,7 @@ class RolePermissionTests {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        permissionAspect = new PermissionAspect(authorizationProperties, userService);
+        permissionAspect = new PermissionAspect(authorizationProperties, userService,socialLoginUserService);
 
         Map<String, AuthorizationProperties.RoleProperties> roles = new HashMap<>();
         AuthorizationProperties.RoleProperties roleProperties = new AuthorizationProperties.RoleProperties();
