@@ -11,6 +11,7 @@ public abstract class BaseOAuthProperties {
     private String clientSecret;
     private String redirectUri;
     private List<String> scopes;
+    private boolean allowStateToPassData;
     private String state;
     private String responseType;
     private String grantType;

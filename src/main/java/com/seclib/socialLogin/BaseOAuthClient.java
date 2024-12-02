@@ -18,10 +18,16 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 public abstract class BaseOAuthClient {
@@ -42,14 +48,17 @@ public abstract class BaseOAuthClient {
         this.objectMapper = new ObjectMapper();
     }
 
-    protected String buildAuthorizationUrl(String authorizationEndpoint) {
+    protected String buildAuthorizationUrl(String authorizationEndpoint, HttpServletResponse response, String stateData) {
         URIBuilder uriBuilder;
         try {
             uriBuilder = new URIBuilder(authorizationEndpoint);
             uriBuilder.addParameter("client_id", config.getClientId());
             uriBuilder.addParameter("redirect_uri", config.getRedirectUri());
             uriBuilder.addParameter("scope", String.join(" ", config.getScopes()));
-            uriBuilder.addParameter("state", config.getState());
+            String state = generateState(response, stateData);
+            if (state != null && !state.isEmpty()) {
+                uriBuilder.addParameter("state", state);
+            }
             uriBuilder.addParameter("response_type", config.getResponseType());
         } catch (URISyntaxException e) {
             log.error("Error building authorization URL", e);
@@ -57,6 +66,46 @@ public abstract class BaseOAuthClient {
         }
         log.info("Authorization URL built: {}", uriBuilder);
         return uriBuilder.toString();
+    }
+
+    private String generateState(HttpServletResponse response, String stateData) {
+        if (!config.isAllowStateToPassData() && config.getState() != null && !config.getState().isEmpty()) {
+            return config.getState();
+        } else {
+            String nonce = UUID.randomUUID().toString();
+            storeNonceInCookie(nonce, stateData, response);
+            return Base64.getUrlEncoder().encodeToString(nonce.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private void storeNonceInCookie(String nonce, String frontendRedirectUri, HttpServletResponse response) {
+        Cookie cookie = new Cookie(nonce, frontendRedirectUri);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(300);
+        response.addCookie(cookie);
+    }
+
+    public String retrieveDataFromState(String state, HttpServletRequest request) {
+        if (!config.isAllowStateToPassData() && config.getState() != null && !config.getState().isEmpty()) {
+            return null;
+        } else {
+            String nonce = new String(Base64.getUrlDecoder().decode(state), StandardCharsets.UTF_8);
+            return retrieveDataFromCookie(nonce, request);
+        }
+    }
+
+    private String retrieveDataFromCookie(String nonce, HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals(nonce)) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 
     public TokenResponse exchangeCodeForToken(String code, String tokenEndpoint) throws IOException {
@@ -76,17 +125,15 @@ public abstract class BaseOAuthClient {
         return executePostRequest(tokenEndpoint, params);
     }
 
-
     protected <T extends BaseUserProfile> T fetchUserProfile(String accessToken, String userInfoEndpoint, Class<T> userProfileClass) throws IOException {
         String jsonResponse = executeGetRequest(userInfoEndpoint, accessToken);
         return parseResponse(jsonResponse, userProfileClass);
     }
 
-
     protected void handleErrorResponse(HttpResponse response) throws IOException {
         String jsonResponse = EntityUtils.toString(response.getEntity());
         log.error("Error response: {}", jsonResponse);
-        throw new OAuthException(401, "Error handling 0Auth procedure");
+        throw new OAuthException(401, "Error handling OAuth procedure");
     }
 
     protected String executeGetRequest(String url, String accessToken) throws IOException {
@@ -104,7 +151,6 @@ public abstract class BaseOAuthClient {
     private <T> T parseResponse(String jsonResponse, Class<T> responseType) throws IOException {
         return objectMapper.readValue(jsonResponse, responseType);
     }
-
 
     protected TokenResponse executePostRequest(String tokenEndpoint, List<NameValuePair> params) throws IOException {
         HttpPost httpPost = new HttpPost(tokenEndpoint);
@@ -124,5 +170,6 @@ public abstract class BaseOAuthClient {
             return tokenResponse;
         }
     }
-
 }
+
+

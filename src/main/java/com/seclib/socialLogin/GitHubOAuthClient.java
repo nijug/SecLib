@@ -1,6 +1,7 @@
 package com.seclib.socialLogin;
 
 import com.seclib.config.OAuth.GitHubOAuthProperties;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,11 @@ public class GitHubOAuthClient extends BaseOAuthClient {
     }
 
     public String buildAuthorizationUrl() {
-        return super.buildAuthorizationUrl(gitHubConfig.getAuthorizationEndpoint());
+        return super.buildAuthorizationUrl(gitHubConfig.getAuthorizationEndpoint(), null, null);
+    }
+
+    public String buildAuthorizationUrl(HttpServletResponse response, String stateData) {
+        return super.buildAuthorizationUrl(gitHubConfig.getAuthorizationEndpoint(), response, stateData);
     }
 
     public TokenResponse exchangeCodeForToken(String code) throws IOException {
