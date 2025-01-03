@@ -8,7 +8,6 @@ import java.util.Base64;
 
 public class CsrfService {
 
-
     public String generateToken() {
         SecureRandom secureRandom = new SecureRandom();
         byte[] tokenBytes = new byte[32];

@@ -8,5 +8,4 @@ public interface SocialLoginService {
     BaseUserDTO loginViaSocial(BaseUserProfile userProfile, HttpServletRequest request);
     BaseUserDTO findByUsername(String username);
     BaseUser findById(Long id);
-
 }

@@ -1,9 +1,7 @@
 package com.seclib.socialLogin;
 
-import com.seclib.user.dto.BaseUserDTO;
 import com.seclib.user.dto.SocialLoginUserDTO;
 import com.seclib.user.mapper.SocialLoginUserMapper;
-import com.seclib.user.model.BaseUser;
 import com.seclib.user.model.SocialLoginUser;
 import com.seclib.user.repository.SocialLoginUserRepository;
 import com.seclib.csrf.CsrfService;
@@ -74,11 +72,12 @@ public class DefaultSocialLoginService implements SocialLoginService {
 
     @Override
     public SocialLoginUserDTO findByUsername(String username) {
-        return  userMapper.toSocialLoginUserDTO(userRepository.findByUsername(username).orElse(null));
+        return userMapper.toSocialLoginUserDTO(userRepository.findByUsername(username).orElse(null));
     }
 
     @Override
     public SocialLoginUser findById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
+
 }

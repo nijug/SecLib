@@ -48,6 +48,7 @@ public class DefaultUserService extends BaseUserService<DefaultUser, DefaultUser
     public DefaultUserDTO register(DefaultUserDTO userToRegister, Optional<String> role) throws ApiException, InterruptedException {
         DefaultUser registeredUser = super.register(userToRegister);
         role.ifPresent(registeredUser::setRole);
+        registeredUser.setEmail(userToRegister.getEmail());
         if (userProperties.isTwoFactorAuthEnabled()) {
             setTwoFactorAuthKey(registeredUser);
         }
